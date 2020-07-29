@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+	<link href="/jquery/bootstrap_3.3.0/css/bootstrap.min.css" type="text/css" rel="stylesheet" />
+	<link href="/jquery/bootstrap-datetimepicker-master/css/bootstrap-datetimepicker.min.css" type="text/css" rel="stylesheet" />
+	<link href="/jquery/bs_pagination/jquery.bs_pagination.min.css"/>
+	<script type="text/javascript" src="/jquery/jquery-1.11.1-min.js"></script>
+	<script type="text/javascript" src="/jquery/bootstrap_3.3.0/js/bootstrap.min.js"></script>
+	<script type="text/javascript" src="/jquery/bootstrap-datetimepicker-master/js/bootstrap-datetimepicker.js"></script>
+	<script type="text/javascript" src="/jquery/bs_pagination/jquery.bs_pagination.min.js"></script>
+	<script type="text/javascript" src="/jquery/bs_pagination/en.js"></script>
+	<script type="text/javascript" src="../../jquery/vue.min.js"></script>
+	<script type="text/javascript" src="../../jquery/axios.min.js"></script>
+</head>
+<body>
+<script>
+
+	$(function () {
+		var vue = new Vue({
+			el : "#work_area",
+			data : {
+				//用于选择所有者
+				users : [],
+                //称呼
+                apples : [],
+                //线索状态
+                states : [],
+                //线索来源
+                sources : [],
+				//用于添加clue
+				clue : {},
+				//接受返回结果
+				result : {},
+				//用于增加的对象
+				addClue : {},
+				//查询条件
+				searchData : {
+					fullname : "",
+					company : "",
+					phone : "",
+					source : "",
+					owner : "",
+					mphone : "",
+					state : "",
+				},
+				//分页信息
+				pageInfo : {
+					start : 1,
+					count : 5
+				},
+				//查询全部的结果
+				pageResult : {},
+                //用于修改的对象
+                editClue : {}
+			},
+			methods : {
+                //获取数据字典
+                getDic : function(){
+                    var url = "/dic/list";
+                    var data = "name=appellation";
+                    var self = this;
+                    axios.post(url, data).then(function (value) {
+                        self.result = value.data;
+                        if(self.result.status == 200){
+                            self.apples = self.result.data;
+                        }else{
+                            alert(self.result.msg);
+                        }
+                    })
+					data = "name=clueState"
+					axios.post(url, data).then(function (value) {
+						self.result = value.data;
+						if(self.result.status == 200){
+							self.states = self.result.data;
+						}else{
+							alert(self.result.msg);
+						}
+					})
+					data = "name=source"
+					axios.post(url, data).then(function (value) {
+						self.result = value.data;
+						if(self.result.status == 200){
+							self.sources = self.result.data;
+						}else{
+							alert(self.result.msg);
+						}
+					})
+                },
+				//查询所有用户
+				getUsers : function () {
+					var url = "/clue/listUser";
+					var self = this;
+					axios.get(url).then(function (value) {
+						self.result = value.data;
+						if(self.result.status == 200){
+							self.users = self.result.data;
+							self.addClue.owner = self.users[0].id;
+						}else{
+							alert(self.result.msg);
+						}
+					})
+				},
+				//添加按钮
+				showAdd : function () {
+					this.getUsers();
+					$("#createClueModal").modal("show");
+				},
+				//添加
+				addCe : function () {
+					var url = "/clue/add";
+					this.addClue.nextcontacttime = $("#create-nextContactTime").val();
+					var data = this.addClue;
+					var self = this;
+					axios.post(url, data).then(function (value) {
+						self.result = value.data;
+						if(self.result.status == 200){
+							$("#createClueModal").modal("hide");
+							self.listAll(self.pageInfo.start, self.pageInfo.count);
+							this.addClue = {};
+						}else{
+							alert(self.result.msg);
+						}
+					})
+				},
+				//查询全部
+				listAll : function (start, count) {
+					var url  = "/clue/listAll";
+                    var data = "start=" + start +
+							"&count=" + count +
+							"&fullname=" + this.searchData.fullname +
+							"&company=" + this.searchData.company +
+							"&phone=" + this.searchData.phone +
+							"&source=" + this.searchData.source +
+							"&owner=" + this.searchData.owner +
+							"&mphone=" + this.searchData.mphone +
+							"&state=" + this.searchData.state;
+					var self = this;
+					axios.post(url, data).then(function (value) {
+						self.result = value.data;
+						if(self.result.status == 200){
+							self.pageResult = self.result.data;
+							$("#checkAll").prop("checked", false);
+							$(".checks").prop("checked", false);
+							var total = self.pageResult.total;
+							var totalPage = total % count == 0 ? total / count : parseInt(total / count) + 1;
+							$("#activityPage").bs_pagination({
+								currentPage: start,
+								rowsPerPage: count,
+								maxRowsPerPage: 20,
+								totalPages: totalPage,
+								totalRows: total,
+								visiblePageLinks: 3,
+								showRowsPerPage: true,
+								showGoToPage: true,
+								showRowsInfo: true,
+								showRowsDefaultInfo: false,
+								onChangePage: function (event, obj) {
+									self.pageInfo.start = obj.currentPage;
+									self.pageInfo.count = obj.rowsPerPage;
+									self.listAll(obj.currentPage, obj.rowsPerPage);
+								}
+							});
+						}else{
+							alert(self.result.msg);
+						}
+					})
+				},
+				//全选
+				checkAll : function () {
+					$(".checks").prop("checked", $("#checkAll").prop("checked"));
+				},
+				//全部按钮对应全选状态
+				checks : function () {
+					$("#checkAll").prop("checked", $(".checks").size()==$(".checks:checked").size());
+				},
+				//删除
+				deleteCe : function () {
+					var ids = new Array();
+					if($(".checks:checked").size() == 0){
+					    return;
+                    }
+					$(".checks:checked").each(function () {
+						ids.push($(this).val());
+					})
+					if(!confirm("确认删除")){
+						return;
+					}
+					var url = "/clue/delete";
+					var data = ids;
+					var self = this;
+					axios.post(url, data).then(function (value) {
+						self.result = value.data;
+						if(self.result.status == 200){
+							self.listAll(self.pageInfo.start, self.pageInfo.count);
+						}else{
+							alert(self.result.msg);
+						}
+					})
+				},
+                //修改
+				editCe : function () {
+                    if($(".checks:checked").size() == 0){
+                        alert("请选择要修改的数据");
+                        return;
+                    }
+                    if($(".checks:checked").size() > 1){
+                        alert("请不要选择多条数据");
+                        return;
+                    }
+                    var data = "id=" + $(".checks:checked").val();
+                    var url = "/clue/edit";
+                    var self = this;
+                    axios.post(url, data).then(function (value) {
+                        self.result = value.data;
+                        if(self.result.status == 200){
+                            self.getUsers();
+                            self.editClue = self.result.data;
+                            $("#editClueModal").modal("show");
+                        }else{
+                            alert(self.result.msg);
+                        }
+                    })
+				},
+                //提交修改
+                updateCe : function () {
+                    this.editClue.nextcontacttime = $("#edit-nextContactTime").val();
+                    var data = this.editClue;
+                    var url = "/clue/update";
+                    var self = this;
+                    axios.post(url, data).then(function (value) {
+                        self.result = value.data;
+                        if(self.result.status == 200){
+                            $("#editClueModal").modal("hide");
+                            self.listAll(self.pageInfo.start, self.pageInfo.count);
+                        }else{
+                            alert(self.result.msg);
+                        }
+                    })
+                },
+                detailCe : function (id) {
+                    window.location.href="detail.html?id=" + id;
+                }
+			},
+
+			mounted : function () {
+				this.listAll(this.pageInfo.start, this.pageInfo.count);
+				this.getDic();
+				$(".time").datetimepicker({
+					minView: "month",
+					language: "zh-CN",
+					format: "yyyy-mm-dd",
+					autoclose: true,
+					todayBtn: true,
+					pickerPosition: "bottom-left"
+				});
+			}
+		})
+	})
+</script>
+<div id="work_area">
+	<!-- 创建线索的模态窗口 -->
+	<div class="modal fade" id="createClueModal" role="dialog">
+		<div class="modal-dialog" role="document" style="width: 90%;">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal">
+						<span aria-hidden="true">×</span>
+					</button>
+					<h4 class="modal-title" id="myModalLabel">创建线索</h4>
+				</div>
+				<div class="modal-body">
+					<form class="form-horizontal" role="form">
+					
+						<div class="form-group">
+							<label for="create-clueOwner" class="col-sm-2 control-label">所有者<span style="font-size: 15px; color: red;">*</span></label>
+							<div class="col-sm-10" style="width: 300px;">
+								<select class="form-control" id="create-clueOwner" v-model="addClue.owner">
+								  <option v-for="user in users" :value="user.id">{{user.name}}</option>
+								</select>
+							</div>
+							<label for="create-company" class="col-sm-2 control-label">公司<span style="font-size: 15px; color: red;">*</span></label>
+							<div class="col-sm-10" style="width: 300px;">
+								<input type="text" class="form-control" id="create-company" v-model="addClue.company">
+							</div>
+						</div>
+						
+						<div class="form-group">
+							<label for="create-call" class="col-sm-2 control-label">称呼</label>
+							<div class="col-sm-10" style="width: 300px;">
+								<select class="form-control" id="create-call" v-model="addClue.appellation">
+								  <option v-for="(value, key) in apples" :value="value">{{value}}</option>
+								</select>
+							</div>
+							<label for="create-surname" class="col-sm-2 control-label">姓名<span style="font-size: 15px; color: red;">*</span></label>
+							<div class="col-sm-10" style="width: 300px;">
+								<input type="text" class="form-control" id="create-surname" v-model="addClue.fullname">
+							</div>
+						</div>
+						
+						<div class="form-group">
+							<label for="create-job" class="col-sm-2 control-label">职位</label>
+							<div class="col-sm-10" style="width: 300px;">
+								<input type="text" class="form-control" id="create-job" v-model="addClue.job">
+							</div>
+							<label for="create-email" class="col-sm-2 control-label">邮箱</label>
+							<div class="col-sm-10" style="width: 300px;">
+								<input type="text" class="form-control" id="create-email" v-model="addClue.email">
+							</div>
+						</div>
+						
+						<div class="form-group">
+							<label for="create-phone" class="col-sm-2 control-label">公司座机</label>
+							<div class="col-sm-10" style="width: 300px;">
+								<input type="text" class="form-control" id="create-phone" v-model="addClue.phone">
+							</div>
+							<label for="create-website" class="col-sm-2 control-label">公司网站</label>
+							<div class="col-sm-10" style="width: 300px;">
+								<input type="text" class="form-control" id="create-website" v-model="addClue.website">
+							</div>
+						</div>
+						
+						<div class="form-group">
+							<label for="create-mphone" class="col-sm-2 control-label">手机</label>
+							<div class="col-sm-10" style="width: 300px;">
+								<input type="text" class="form-control" id="create-mphone" v-model="addClue.mphone">
+							</div>
+							<label for="create-status" class="col-sm-2 control-label">线索状态</label>
+							<div class="col-sm-10" style="width: 300px;">
+								<select class="form-control" id="create-status" v-model="addClue.state">
+								  <option v-for="(value, key) in states" :value="value">{{value}}</option>
+								</select>
+							</div>
+						</div>
+						
+						<div class="form-group">
+							<label for="create-source" class="col-sm-2 control-label">线索来源</label>
+							<div class="col-sm-10" style="width: 300px;">
+								<select class="form-control" id="create-source" v-model="addClue.source">
+								  <option v-for="(value, key) in sources" :value="value">{{value}}</option>
+								</select>
+							</div>
+						</div>
+						
+
+						<div class="form-group">
+							<label for="create-describe" class="col-sm-2 control-label">线索描述</label>
+							<div class="col-sm-10" style="width: 81%;">
+								<textarea class="form-control" rows="3" id="create-describe" v-model="addClue.description"></textarea>
+							</div>
+						</div>
+						
+						<div style="height: 1px; width: 103%; background-color: #D5D5D5; left: -13px; position: relative;"></div>
+						
+						<div style="position: relative;top: 15px;">
+							<div class="form-group">
+								<label for="create-contactSummary" class="col-sm-2 control-label">联系纪要</label>
+								<div class="col-sm-10" style="width: 81%;">
+									<textarea class="form-control" rows="3" id="create-contactSummary" v-model="addClue.contactsummary"></textarea>
+								</div>
+							</div>
+							<div class="form-group">
+								<label for="create-nextContactTime" class="col-sm-2 control-label">下次联系时间</label>
+								<div class="col-sm-10" style="width: 300px;">
+									<input type="text" class="form-control time" id="create-nextContactTime">
+								</div>
+							</div>
+						</div>
+						
+						<div style="height: 1px; width: 103%; background-color: #D5D5D5; left: -13px; position: relative; top : 10px;"></div>
+						
+						<div style="position: relative;top: 20px;">
+							<div class="form-group">
+                                <label for="create-address" class="col-sm-2 control-label">详细地址</label>
+                                <div class="col-sm-10" style="width: 81%;">
+                                    <textarea class="form-control" rows="1" id="create-address" v-model="addClue.address"></textarea>
+                                </div>
+							</div>
+						</div>
+					</form>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+					<button type="button" class="btn btn-primary" @click="addCe()">保存</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	
+	<!-- 修改线索的模态窗口 -->
+	<div class="modal fade" id="editClueModal" role="dialog">
+		<div class="modal-dialog" role="document" style="width: 90%;">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal">
+						<span aria-hidden="true">×</span>
+					</button>
+					<h4 class="modal-title">修改线索</h4>
+				</div>
+				<div class="modal-body">
+					<form class="form-horizontal" role="form">
+					
+						<div class="form-group">
+							<label for="edit-clueOwner" class="col-sm-2 control-label">所有者<span style="font-size: 15px; color: red;">*</span></label>
+							<div class="col-sm-10" style="width: 300px;">
+								<select class="form-control" id="edit-clueOwner" v-model="editClue.owner">
+								  <option v-for="user in users" :value="user.id">{{user.name}}</option>
+								</select>
+							</div>
+							<label for="edit-company" class="col-sm-2 control-label">公司<span style="font-size: 15px; color: red;">*</span></label>
+							<div class="col-sm-10" style="width: 300px;">
+								<input type="text" class="form-control" id="edit-company" v-model="editClue.company">
+							</div>
+						</div>
+						
+						<div class="form-group">
+							<label for="edit-call" class="col-sm-2 control-label">称呼</label>
+							<div class="col-sm-10" style="width: 300px;">
+								<select class="form-control" id="edit-call" v-model="editClue.appellation">
+								  <option v-for="(value, key) in apples" :value="value">{{value}}</option>
+
+								</select>
+							</div>
+							<label for="edit-surname" class="col-sm-2 control-label">姓名<span style="font-size: 15px; color: red;">*</span></label>
+							<div class="col-sm-10" style="width: 300px;">
+								<input type="text" class="form-control" id="edit-surname" v-model="editClue.fullname">
+							</div>
+						</div>
+						
+						<div class="form-group">
+							<label for="edit-job" class="col-sm-2 control-label">职位</label>
+							<div class="col-sm-10" style="width: 300px;">
+								<input type="text" class="form-control" id="edit-job" v-model="editClue.job">
+							</div>
+							<label for="edit-email" class="col-sm-2 control-label">邮箱</label>
+							<div class="col-sm-10" style="width: 300px;">
+								<input type="text" class="form-control" id="edit-email" v-model="editClue.email">
+							</div>
+						</div>
+						
+						<div class="form-group">
+							<label for="edit-phone" class="col-sm-2 control-label">公司座机</label>
+							<div class="col-sm-10" style="width: 300px;">
+								<input type="text" class="form-control" id="edit-phone" v-model="editClue.phone">
+							</div>
+							<label for="edit-website" class="col-sm-2 control-label">公司网站</label>
+							<div class="col-sm-10" style="width: 300px;">
+								<input type="text" class="form-control" id="edit-website" v-model="editClue.website">
+							</div>
+						</div>
+						
+						<div class="form-group">
+							<label for="edit-mphone" class="col-sm-2 control-label">手机</label>
+							<div class="col-sm-10" style="width: 300px;">
+								<input type="text" class="form-control" id="edit-mphone" v-model="editClue.mphone">
+							</div>
+							<label for="edit-status" class="col-sm-2 control-label">线索状态</label>
+							<div class="col-sm-10" style="width: 300px;">
+								<select class="form-control" id="edit-status" v-model="editClue.state">
+								  <option v-for="(value, key) in states" :value="value">{{value}}</option>
+								</select>
+							</div>
+						</div>
+						
+						<div class="form-group">
+							<label for="edit-source" class="col-sm-2 control-label">线索来源</label>
+							<div class="col-sm-10" style="width: 300px;">
+								<select class="form-control" id="edit-source" v-model="editClue.source">
+								  <option v-for="(value, key) in sources" :value="value">{{value}}</option>
+								</select>
+							</div>
+						</div>
+						
+						<div class="form-group">
+							<label for="edit-describe" class="col-sm-2 control-label">描述</label>
+							<div class="col-sm-10" style="width: 81%;">
+								<textarea class="form-control" rows="3" id="edit-describe" v-model="editClue.description"></textarea>
+							</div>
+						</div>
+						
+						<div style="height: 1px; width: 103%; background-color: #D5D5D5; left: -13px; position: relative;"></div>
+						
+						<div style="position: relative;top: 15px;">
+							<div class="form-group">
+								<label for="edit-contactSummary" class="col-sm-2 control-label">联系纪要</label>
+								<div class="col-sm-10" style="width: 81%;">
+									<textarea class="form-control" rows="3" id="edit-contactSummary" v-model="editClue.contactsummary"></textarea>
+								</div>
+							</div>
+							<div class="form-group">
+								<label for="edit-nextContactTime" class="col-sm-2 control-label">下次联系时间</label>
+								<div class="col-sm-10" style="width: 300px;">
+									<input type="text" class="form-control time" id="edit-nextContactTime" v-model="editClue.nextcontacttime">
+								</div>
+							</div>
+						</div>
+						
+						<div style="height: 1px; width: 103%; background-color: #D5D5D5; left: -13px; position: relative; top : 10px;"></div>
+
+                        <div style="position: relative;top: 20px;">
+                            <div class="form-group">
+                                <label for="edit-address" class="col-sm-2 control-label">详细地址</label>
+                                <div class="col-sm-10" style="width: 81%;">
+                                    <textarea class="form-control" rows="1" id="edit-address" v-model="editClue.address"></textarea>
+                                </div>
+                            </div>
+                        </div>
+					</form>
+					
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+					<button type="button" class="btn btn-primary" @click="updateCe()">更新</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div>
+		<div style="position: relative; left: 10px; top: -10px;">
+			<div class="page-header">
+				<h3>线索列表</h3>
+			</div>
+		</div>
+	</div>
+	
+	<div style="position: relative; top: -20px; left: 0px; width: 100%; height: 100%;">
+	
+		<div style="width: 100%; position: absolute;top: 5px; left: 10px;">
+		
+			<div class="btn-toolbar" role="toolbar" style="height: 80px;">
+				<form class="form-inline" role="form" style="position: relative;top: 8%; left: 5px;">
+				  
+				  <div class="form-group">
+				    <div class="input-group">
+				      <div class="input-group-addon">名称</div>
+				      <input class="form-control" type="text" v-model="searchData.fullname">
+				    </div>
+				  </div>
+				  
+				  <div class="form-group">
+				    <div class="input-group">
+				      <div class="input-group-addon">公司</div>
+				      <input class="form-control" type="text" v-model="searchData.company">
+				    </div>
+				  </div>
+				  
+				  <div class="form-group">
+				    <div class="input-group">
+				      <div class="input-group-addon">公司座机</div>
+				      <input class="form-control" type="text" v-model="searchData.phone">
+				    </div>
+				  </div>
+				  
+				  <div class="form-group">
+				    <div class="input-group">
+				      <div class="input-group-addon">线索来源</div>
+					  <select class="form-control" v-model="searchData.source">
+						  <option value=""></option>
+					  	  <option v-for="(value, key) in sources" :value="value">{{value}}</option>
+					  </select>
+				    </div>
+				  </div>
+				  
+				  <br>
+				  
+				  <div class="form-group">
+				    <div class="input-group">
+				      <div class="input-group-addon">所有者</div>
+				      <input class="form-control" type="text" v-model="searchData.owner">
+				    </div>
+				  </div>
+				  
+				  
+				  
+				  <div class="form-group">
+				    <div class="input-group">
+				      <div class="input-group-addon">手机</div>
+				      <input class="form-control" type="text" v-model="searchData.mphone">
+				    </div>
+				  </div>
+				  
+				  <div class="form-group">
+				    <div class="input-group">
+				      <div class="input-group-addon">线索状态</div>
+					  <select class="form-control" v-model="searchData.state">
+						  <option value=""></option>
+						  <option v-for="(value, key) in states" :value="value">{{value}}</option>
+					  </select>
+				    </div>
+				  </div>
+				  <input type="button" class="btn btn-default" @click="listAll(pageInfo.start, pageInfo.count)" value="查询">
+				</form>
+			</div>
+			<div class="btn-toolbar" role="toolbar" style="background-color: #F7F7F7; height: 50px; position: relative;top: 40px;">
+				<div class="btn-group" style="position: relative; top: 18%;">
+				  <button type="button" class="btn btn-primary" data-target="#createClueModal" @click="showAdd()"><span class="glyphicon glyphicon-plus"></span> 创建</button>
+				  <button type="button" class="btn btn-default" data-target="#editClueModal" @click="editCe()"><span class="glyphicon glyphicon-pencil"></span> 修改</button>
+				  <button type="button" class="btn btn-danger" @click="deleteCe()"><span class="glyphicon glyphicon-minus"></span> 删除</button>
+				</div>
+			</div>
+			<div style="position: relative;top: 50px;">
+				<table class="table table-hover">
+					<thead>
+						<tr style="color: #B3B3B3;">
+							<td><input type="checkbox" id="checkAll" @click="checkAll()"/></td>
+							<td>名称</td>
+							<td>公司</td>
+							<td>公司座机</td>
+							<td>手机</td>
+							<td>线索来源</td>
+							<td>所有者</td>
+							<td>线索状态</td>
+						</tr>
+					</thead>
+					<tbody>
+						<tr v-for="clue in pageResult.rows">
+							<td><input type="checkbox" class="checks" @click="checks()" :value="clue.id"/></td>
+							<td><a style="text-decoration: none; cursor: pointer;" @click="detailCe(clue.id)">{{clue.fullname}}{{clue.appellation}}</a></td>
+							<td>{{clue.company}}</td>
+							<td>{{clue.phone}}</td>
+							<td>{{clue.mphone}}</td>
+							<td>{{clue.source}}</td>
+							<td>{{clue.ownername}}</td>
+							<td>{{clue.state}}</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+			
+			<div style="height: 50px; position: relative;top: 60px;">
+				<div id="activityPage"></div>
+			</div>
+		</div>
+	</div>
+</div>
+</body>
+</html>

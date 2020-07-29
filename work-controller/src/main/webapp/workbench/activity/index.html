@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+	<link href="/jquery/bootstrap_3.3.0/css/bootstrap.min.css" type="text/css" rel="stylesheet" />
+	<link href="/jquery/bootstrap-datetimepicker-master/css/bootstrap-datetimepicker.min.css" type="text/css" rel="stylesheet" />
+	<link href="/jquery/bs_pagination/jquery.bs_pagination.min.css"/>
+	<script type="text/javascript" src="/jquery/jquery-1.11.1-min.js"></script>
+	<script type="text/javascript" src="/jquery/bootstrap_3.3.0/js/bootstrap.min.js"></script>
+	<script type="text/javascript" src="/jquery/bootstrap-datetimepicker-master/js/bootstrap-datetimepicker.js"></script>
+	<script type="text/javascript" src="/jquery/bs_pagination/jquery.bs_pagination.min.js"></script>
+	<script type="text/javascript" src="/jquery/bs_pagination/en.js"></script>
+	<script type="text/javascript" src="../../jquery/vue.min.js"></script>
+	<script type="text/javascript" src="../../jquery/axios.min.js"></script>
+</head>
+<body>
+<script>
+	$(function () {
+		var vue= new Vue({
+			el: "#work_area",
+			data: {
+				users : [],
+				result : {},
+				activity : {},
+				editAct : {},
+				pageResult : {},
+				pageInfo : {
+					start : 1,
+					count : 5,
+				},
+				actName : "",
+				owner : "",
+			},
+			methods: {
+				addActivity : function () {
+					var url = "/activity/listUser";
+					var self = this;
+					axios.get(url).then(function (value) {
+						self.result = value.data;
+						if(self.result.status == 200) {
+							self.users = self.result.data;
+                            self.activity.owner = self.users[0].id;
+						}else{
+							alert(self.msg);
+						}
+					})
+				},
+				addSubmit : function () {
+					this.activity.startdate=$("#create-startTime").val();
+					this.activity.enddate=$("#create-endTime").val();
+					var url = "/activity/add";
+					var data = this.activity;
+					var self = this;
+					axios.post(url, data).then(function (value) {
+						self.result = value.data;
+						if(self.result.status == 200){
+							$("#createActivityModal").modal("hide");
+							self.activity = {};
+							self.list(self.pageInfo.start, self.pageInfo.count);
+						}
+					})
+				},
+				list: function (start, count) {
+					var self = this;
+					var data = "name="+ self.actName + "&owner=" + self.owner + "&startDate=" + $("#startTime").val()
+								+ "&endDate=" + $("#endTime").val() + "&start=" + start + "&count=" + count;
+					var url = "/activity/list?" + data;
+					axios.post(url).then(function (value) {
+						self.result = value.data;
+						if(self.result.status == 200){
+							self.pageResult = self.result.data;
+							var total = self.pageResult.total;
+							var totalPage = total % count == 0 ? total / count : parseInt(total / count) + 1;
+							$("#checkAll").prop("checked", false);
+							$(":checkbox[name=activities]").prop("checked", false);
+							$("#activityPage").bs_pagination({
+								currentPage: start,
+								rowsPerPage: count,
+								maxRowsPerPage: 20,
+								totalPages: totalPage,
+								totalRows: total,
+								visiblePageLinks: 3,
+								showRowsPerPage: true,
+								showGoToPage: true,
+								showRowsInfo: true,
+								showRowsDefaultInfo: false,
+								onChangePage: function (event, obj) {
+									self.pageInfo.start = obj.currentPage;
+									self.pageInfo.count = obj.rowsPerPage;
+									vue.list(obj.currentPage, obj.rowsPerPage);
+								},
+							})
+						} else{
+							alert(self.result.msg);
+						}
+					})
+				},
+				checkAct : function () {
+					$("#checkAll").prop("checked", $(":checkbox[name=activities]").size() == $(":checkbox[name=activities]:checked").size());
+				},
+				checkAll : function () {
+					$(":checkbox[name=activities]").prop("checked", $("#checkAll").prop("checked"));
+				},
+				deleteAct : function () {
+					var data = new Array();
+					$(":checkbox[name=activities]:checked").each(function () {
+						data.push($(this).val());
+					})
+					if(data.length == 0){
+						alert("请选择要删除的数据");
+						return;
+					}
+					if(!confirm("确认删除？")){
+						return;
+					}
+					var url = "/activity/delete";
+					var self = this;
+					axios.post(url, data).then(function (value) {
+						self.result = value.data;
+						if(self.result.status == 200){
+							self.list(self.pageInfo.start, self.pageInfo.count);
+						}else{
+							alert(self.result.msg);
+						}
+					})
+				},
+				editActivity : function () {
+					if($(":checkbox[name=activities]:checked").size() == 0){
+						alert("请选择一条数据");
+						return;
+					}
+					if($(":checkbox[name=activities]:checked").size() > 1){
+						alert("请不要选择多条数据");
+						return;
+					}
+					var id = $(":checkbox[name=activities]:checked").val();
+					var data = "id=" + id;
+					var url = "/activity/edit";
+					var self = this;
+					axios.post(url, data).then(function (value) {
+						self.result = value.data;
+						if(self.result.status == 200){
+                            self.editAct = self.result.data;
+							self.addActivity();
+							$("#editActivityModal").modal("show");
+						}else{
+							alert(self.result.msg);
+						}
+					})
+				},
+				updateAct : function () {
+					this.editAct.startdate = $("#edit-startTime").val();
+					this.editAct.enddate = $("#edit-endTime").val();
+					var url = "/activity/update";
+					var data = this.editAct;
+					var self = this;
+					axios.post(url, data).then(function (value) {
+						self.result = value.data;
+						if(self.result.status == 200){
+							$("#editActivityModal").modal("hide");
+							self.list(self.pageInfo.start, self.pageInfo.count);
+						}else{
+							alert(self.result.msg);
+						}
+					})
+				},
+				showDetail : function (id) {
+					window.location.href = "detail.html?id=" + id;
+				}
+			},
+			mounted: function () {
+				this.list(this.pageInfo.start, this.pageInfo.count);
+				$(".time").datetimepicker({
+					minView: "month",
+					language: "zh-CN",
+					format: "yyyy-mm-dd",
+					autoclose: true,
+					todayBtn: true,
+					pickerPosition: "bottom-left"
+				});
+			}
+		})
+	})
+</script>
+<div id="work_area">
+	<!-- 创建市场活动的模态窗口 -->
+	<div class="modal fade" id="createActivityModal" role="dialog">
+		<div class="modal-dialog" role="document" style="width: 85%;">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal">
+						<span aria-hidden="true">×</span>
+					</button>
+					<h4 class="modal-title" id="myModalLabel1">创建市场活动</h4>
+				</div>
+				<div class="modal-body">
+				
+					<form class="form-horizontal" role="form">
+					
+						<div class="form-group">
+							<label for="create-marketActivityOwner" class="col-sm-2 control-label">所有者<span style="font-size: 15px; color: red;">*</span></label>
+							<div class="col-sm-10" style="width: 300px;">
+								<select class="form-control" id="create-marketActivityOwner" v-model="activity.owner">
+								  <option v-for="user in users" :value="user.id">{{user.name}}</option>
+								</select>
+							</div>
+                            <label for="create-marketActivityName" class="col-sm-2 control-label">名称<span style="font-size: 15px; color: red;">*</span></label>
+                            <div class="col-sm-10" style="width: 300px;">
+                                <input type="text" class="form-control" id="create-marketActivityName" v-model="activity.name">
+                            </div>
+						</div>
+						
+						<div class="form-group">
+							<label for="create-startTime" class="col-sm-2 control-label">开始日期</label>
+							<div class="col-sm-10" style="width: 300px;" >
+								<input type="text" class="form-control time" id="create-startTime">
+							</div>
+							<label for="create-endTime" class="col-sm-2 control-label">结束日期</label>
+							<div class="col-sm-10" style="width: 300px;">
+								<input type="text" class="form-control time" id="create-endTime">
+							</div>
+						</div>
+                        <div class="form-group">
+
+                            <label for="create-cost" class="col-sm-2 control-label">成本</label>
+                            <div class="col-sm-10" style="width: 300px;">
+                                <input type="text" class="form-control" id="create-cost" v-model="activity.cost">
+                            </div>
+                        </div>
+						<div class="form-group">
+							<label for="create-describe" class="col-sm-2 control-label">描述</label>
+							<div class="col-sm-10" style="width: 81%;">
+								<textarea class="form-control" rows="3" id="create-describe" v-model="activity.description"></textarea>
+							</div>
+						</div>
+						
+					</form>
+					
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+					<button type="button" class="btn btn-primary" @click = "addSubmit()">保存</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	
+	<!-- 修改市场活动的模态窗口 -->
+	<div class="modal fade" id="editActivityModal" role="dialog">
+		<div class="modal-dialog" role="document" style="width: 85%;">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal">
+						<span aria-hidden="true">×</span>
+					</button>
+					<h4 class="modal-title" id="myModalLabel2">修改市场活动</h4>
+				</div>
+				<div class="modal-body">
+				
+					<form class="form-horizontal" role="form">
+					
+						<div class="form-group">
+							<label for="edit-marketActivityOwner" class="col-sm-2 control-label">所有者<span style="font-size: 15px; color: red;">*</span></label>
+							<div class="col-sm-10" style="width: 300px;">
+								<select class="form-control" id="edit-marketActivityOwner" v-model="editAct.owner">
+								  <option v-for="user in users" :value="user.id" >{{user.name}}</option>
+								</select>
+							</div>
+                            <label for="edit-marketActivityName" class="col-sm-2 control-label">名称<span style="font-size: 15px; color: red;">*</span></label>
+                            <div class="col-sm-10" style="width: 300px;">
+                                <input type="text" class="form-control" id="edit-marketActivityName" v-model="editAct.name">
+                            </div>
+						</div>
+
+						<div class="form-group">
+							<label for="edit-startTime" class="col-sm-2 control-label">开始日期</label>
+							<div class="col-sm-10" style="width: 300px;">
+								<input type="text" class="form-control time" id="edit-startTime" v-model="editAct.startdate">
+							</div>
+							<label for="edit-endTime" class="col-sm-2 control-label">结束日期</label>
+							<div class="col-sm-10" style="width: 300px;">
+								<input type="text" class="form-control time" id="edit-endTime" v-model="editAct.enddate">
+							</div>
+						</div>
+						
+						<div class="form-group">
+							<label for="edit-cost" class="col-sm-2 control-label">成本</label>
+							<div class="col-sm-10" style="width: 300px;">
+								<input type="text" class="form-control" id="edit-cost" v-model="editAct.cost">
+							</div>
+						</div>
+						
+						<div class="form-group">
+							<label for="edit-describe" class="col-sm-2 control-label">描述</label>
+							<div class="col-sm-10" style="width: 81%;">
+								<textarea class="form-control" rows="3" id="edit-describe">{{editAct.description}}</textarea>
+							</div>
+						</div>
+						
+					</form>
+					
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+					<button type="button" class="btn btn-primary" @click="updateAct()">更新</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	
+
+	<div>
+		<div style="position: relative; left: 10px; top: -10px;">
+			<div class="page-header">
+				<h3>市场活动列表</h3>
+			</div>
+		</div>
+	</div>
+	<div style="position: relative; top: -20px; left: 0px; width: 100%; height: 100%;">
+		<div style="width: 100%; position: absolute;top: 5px; left: 10px;">
+		
+			<div class="btn-toolbar" role="toolbar" style="height: 80px;">
+				<form class="form-inline" role="form" style="position: relative;top: 8%; left: 5px;">
+				  
+				  <div class="form-group">
+				    <div class="input-group">
+				      <div class="input-group-addon">名称</div>
+				      <input class="form-control" type="text" v-model="actName">
+				    </div>
+				  </div>
+				  
+				  <div class="form-group">
+				    <div class="input-group">
+				      <div class="input-group-addon">所有者</div>
+				      <input class="form-control" type="text" v-model="owner">
+				    </div>
+				  </div>
+
+
+				  <div class="form-group">
+				    <div class="input-group">
+				      <div class="input-group-addon">开始日期</div>
+					  <input class="form-control time" type="text" id="startTime" />
+				    </div>
+				  </div>
+				  <div class="form-group">
+				    <div class="input-group">
+				      <div class="input-group-addon">结束日期</div>
+					  <input class="form-control time" type="text" id="endTime">
+				    </div>
+				  </div>
+				  
+				  <input type="button" class="btn btn-default" @click="list(pageInfo.start, pageInfo.count)" value="查询">
+				</form>
+			</div>
+			<div class="btn-toolbar" role="toolbar" style="background-color: #F7F7F7; height: 50px; position: relative;top: 5px;">
+				<div class="btn-group" style="position: relative; top: 18%;">
+				  <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#createActivityModal" @click="addActivity()"><span class="glyphicon glyphicon-plus"></span> 创建</button>
+				  <button type="button" class="btn btn-default" data-target="#editActivityModal" @click="editActivity()"><span class="glyphicon glyphicon-pencil"></span> 修改</button>
+				  <button type="button" class="btn btn-danger" @click="deleteAct()"><span class="glyphicon glyphicon-minus"></span> 删除</button>
+				</div>
+				
+			</div>
+			<div style="position: relative;top: 10px;">
+				<table class="table table-hover">
+					<thead>
+						<tr style="color: #B3B3B3;">
+							<td><input type="checkbox" id="checkAll" @click="checkAll()"/></td>
+							<td>名称</td>
+                            <td>所有者</td>
+							<td>开始日期</td>
+							<td>结束日期</td>
+						</tr>
+					</thead>
+					<tbody>
+						<tr class="active" v-for="activity in pageResult.rows">
+							<td><input type="checkbox" :value="activity.id" name="activities" @click="checkAct()"/></td>
+							<td><a style="text-decoration: none; cursor: pointer;" @click="showDetail(activity.id)">{{activity.name}}</a></td>
+                            <td>{{activity.ownername}}</td>
+							<td>{{activity.startdate}}</td>
+							<td>{{activity.enddate}}</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+			
+			<div style="height:50px; position: relative;top: 30px;" >
+				<div id="activityPage">
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+</body>
+</html>
