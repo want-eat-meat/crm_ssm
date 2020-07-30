@@ -4,12 +4,9 @@
 <meta charset="UTF-8">
 	<link href="/jquery/bootstrap_3.3.0/css/bootstrap.min.css" type="text/css" rel="stylesheet" />
 	<link href="/jquery/bootstrap-datetimepicker-master/css/bootstrap-datetimepicker.min.css" type="text/css" rel="stylesheet" />
-	<link href="/jquery/bs_pagination/jquery.bs_pagination.min.css"/>
 	<script type="text/javascript" src="/jquery/jquery-1.11.1-min.js"></script>
 	<script type="text/javascript" src="/jquery/bootstrap_3.3.0/js/bootstrap.min.js"></script>
 	<script type="text/javascript" src="/jquery/bootstrap-datetimepicker-master/js/bootstrap-datetimepicker.js"></script>
-	<script type="text/javascript" src="/jquery/bs_pagination/jquery.bs_pagination.min.js"></script>
-	<script type="text/javascript" src="/jquery/bs_pagination/en.js"></script>
 	<script type="text/javascript" src="../../jquery/vue.min.js"></script>
 	<script type="text/javascript" src="../../jquery/axios.min.js"></script>
 </head>
@@ -18,12 +15,25 @@
 	//默认情况下取消和保存按钮是隐藏的
 	var cancelAndSaveBtnDefault = true;
 	var ctmId = location.search.split("=")[1];
+	var url = "/customerRemark";
 	$(function(){
 		var vue = new Vue({
 			el : "#work_area",
 			data : {
+				//返回结果信息
+				result : {},
 				//客户信息
 				customer : {},
+				//修改客户
+				editCustomer : {},
+				//用户集合
+				users : [],
+				//添加备注
+				addRemark : {},
+				//全部备注集合
+				remarks : [],
+				//修改备注
+				editRemark : {},
 			},
 			methods : {
 				//交互事件
@@ -70,10 +80,136 @@
 							alert(self.result.msg);
 						}
 					})
+				},
+				//修改客户信息
+				editCtm : function f() {
+					var uri = "/customer/listUsers";
+					var self = this;
+					axios.get(uri).then(function (value) {
+						self.result = value.data;
+						if(self.result.status == 200){
+							self.users = self.result.data;
+							self.editCustomer = JSON.parse(JSON.stringify(self.customer));
+							$("#editCustomerModal").modal("show");
+						}else{
+							alert(self.result.msg);
+						}
+					})
+				},
+				//提交修改
+				updateCtm : function () {
+					this.editCustomer.nextcontacttime = $("#create-nextContactTime2").val();
+					var uri = "/customer/update";
+					var data = this.editCustomer;
+					var self = this;
+					axios.post(uri, data).then(function (value) {
+						self.result = value.data;
+						if(self.result.status == 200){
+							$("#editCustomerModal").modal("hide");
+							self.selectCtm();
+						}else{
+							alert(self.result.msg);
+						}
+					})
+				},
+				//删除客户
+				deleteCtm : function () {
+					if(!confirm("确认删除？")){
+						return;
+					}
+					var ids = new Array();
+					ids.push(ctmId);
+					var uri = "/customer/delete";
+					var self = this;
+					axios.post(uri, ids).then(function (value) {
+						self.result = value.data;
+						if(self.result.status == 200){
+							window.history.back();
+						}else{
+							alert(self.result.msg);
+						}
+					})
+				},
+				//添加备注
+				addRk : function () {
+					this.addRemark.customerid = ctmId;
+					var uri = url + "/add";
+					var data = this.addRemark;
+					var self = this;
+					axios.post(uri, data).then(function (value) {
+						self.result = value.data;
+						if(self.result.status == 200){
+							self.addRemark = {};
+							self.hideSub();
+							self.listRk();
+						}else{
+							alert(self.result.msg);
+						}
+					})
+				},
+				//查询该客户下全部备注
+				listRk : function () {
+					var uri = url + "/list";
+					var data = "id=" + ctmId;
+					var self = this;
+					axios.post(uri, data).then(function (value) {
+						self.result = value.data;
+						if(self.result.status == 200){
+							self.remarks = self.result.data;
+						}else{
+							alert(self.result.msg);
+						}
+					})
+				},
+				//修改备注
+				editRk : function (remark) {
+					this.editRemark = JSON.parse(JSON.stringify(remark));
+					$("#editRemarkModal").modal("show");
+				},
+				//提交修改备注
+				updateRk : function(){
+					var uri = url + "/update";
+					var data = this.editRemark;
+					var self = this;
+					axios.post(uri, data).then(function (value) {
+						self.result = value.data;
+						if(self.result.status == 200){
+							$("#editRemarkModal").modal("hide");
+							self.listRk();
+						}else{
+							alert(self.result.msg);
+						}
+					})
+				},
+				//删除备注
+				deleteRk : function (id) {
+					if(!confirm("确认删除？")){
+						return;
+					}
+					var uri = url + "/delete";
+					var data = "id=" + id;
+					var self = this;
+					axios.post(uri, data).then(function (value) {
+						self.result = value.data;
+						if(self.result.status == 200){
+							self.listRk();
+						}else{
+							alert(self.result.msg);
+						}
+					})
 				}
 			},
 			mounted : function () {
 				this.selectCtm();
+				this.listRk();
+				$(".time").datetimepicker({
+					minView: "month",
+					language: "zh-CN",
+					format: "yyyy-mm-dd",
+					autoclose: true,
+					todayBtn: true,
+					pickerPosition: "top-left"
+				});
 			}
 		})
 	});
@@ -275,33 +411,31 @@
                         <div class="form-group">
                             <label for="edit-customerOwner" class="col-sm-2 control-label">所有者<span style="font-size: 15px; color: red;">*</span></label>
                             <div class="col-sm-10" style="width: 300px;">
-                                <select class="form-control" id="edit-customerOwner">
-                                    <option>zhangsan</option>
-                                    <option>lisi</option>
-                                    <option>wangwu</option>
+                                <select class="form-control" id="edit-customerOwner" v-model="editCustomer.owner">
+                                    <option v-for="user in users" :value="user.id">{{user.name}}</option>
                                 </select>
                             </div>
                             <label for="edit-customerName" class="col-sm-2 control-label">名称<span style="font-size: 15px; color: red;">*</span></label>
                             <div class="col-sm-10" style="width: 300px;">
-                                <input type="text" class="form-control" id="edit-customerName" value="动力节点">
+                                <input type="text" class="form-control" id="edit-customerName" v-model="editCustomer.name">
                             </div>
                         </div>
 
                         <div class="form-group">
                             <label for="edit-website" class="col-sm-2 control-label">公司网站</label>
                             <div class="col-sm-10" style="width: 300px;">
-                                <input type="text" class="form-control" id="edit-website" value="http://www.bjpowernode.com">
+                                <input type="text" class="form-control" id="edit-website" v-model="editCustomer.website">
                             </div>
                             <label for="edit-phone" class="col-sm-2 control-label">公司座机</label>
                             <div class="col-sm-10" style="width: 300px;">
-                                <input type="text" class="form-control" id="edit-phone" value="010-84846003">
+                                <input type="text" class="form-control" id="edit-phone" v-model="editCustomer.phone">
                             </div>
                         </div>
 
                         <div class="form-group">
                             <label for="edit-describe" class="col-sm-2 control-label">描述</label>
                             <div class="col-sm-10" style="width: 81%;">
-                                <textarea class="form-control" rows="3" id="edit-describe"></textarea>
+                                <textarea class="form-control" rows="3" id="edit-describe" v-model="editCustomer.description"></textarea>
                             </div>
                         </div>
 
@@ -311,13 +445,13 @@
                             <div class="form-group">
                                 <label for="create-contactSummary1" class="col-sm-2 control-label">联系纪要</label>
                                 <div class="col-sm-10" style="width: 81%;">
-                                    <textarea class="form-control" rows="3" id="create-contactSummary1"></textarea>
+                                    <textarea class="form-control" rows="3" id="create-contactSummary1" v-model="editCustomer.contactsummary"></textarea>
                                 </div>
                             </div>
                             <div class="form-group">
                                 <label for="create-nextContactTime2" class="col-sm-2 control-label">下次联系时间</label>
                                 <div class="col-sm-10" style="width: 300px;">
-                                    <input type="text" class="form-control" id="create-nextContactTime2">
+                                    <input type="text" class="form-control time" id="create-nextContactTime2" v-model="editCustomer.nextcontacttime">
                                 </div>
                             </div>
                         </div>
@@ -337,11 +471,39 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
-                    <button type="button" class="btn btn-primary" data-dismiss="modal">更新</button>
+                    <button type="button" class="btn btn-primary" @click="updateCtm">更新</button>
                 </div>
             </div>
         </div>
     </div>
+
+	<!--用于修改客户备注的模态窗口-->
+	<div class="modal fade" id="editRemarkModal" role="dialog">
+		<div class="modal-dialog" role="document" style="width: 40%;">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal">
+						<span aria-hidden="true">×</span>
+					</button>
+					<h4 class="modal-title" >修改备注</h4>
+				</div>
+				<div class="modal-body">
+					<form class="form-horizontal" role="form">
+						<div class="form-group">
+							<label for="edit-describe" class="col-sm-2 control-label">内容</label>
+							<div class="col-sm-10" style="width: 81%;">
+								<textarea class="form-control" rows="3" v-model="editRemark.notecontent"></textarea>
+							</div>
+						</div>
+					</form>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+					<button type="button" class="btn btn-primary" id="updateRemarkBtn" @click="updateRk()">更新</button>
+				</div>
+			</div>
+		</div>
+	</div>
 
 	<!-- 返回按钮 -->
 	<div style="position: relative; top: 35px; left: 10px;">
@@ -354,8 +516,8 @@
 			<h3>{{customer.name}} <small><a href="javascript:void(0)" @click="jump(customer.website)">{{customer.website}}</a></small></h3>
 		</div>
 		<div style="position: relative; height: 50px; width: 500px;  top: -72px; left: 700px;">
-			<button type="button" class="btn btn-default" data-toggle="modal" data-target="#editCustomerModal"><span class="glyphicon glyphicon-edit"></span> 编辑</button>
-			<button type="button" class="btn btn-danger"><span class="glyphicon glyphicon-minus"></span> 删除</button>
+			<button type="button" class="btn btn-default" @click="editCtm()"><span class="glyphicon glyphicon-edit"></span> 编辑</button>
+			<button type="button" class="btn btn-danger" @click="deleteCtm()"><span class="glyphicon glyphicon-minus"></span> 删除</button>
 		</div>
 	</div>
 	
@@ -426,24 +588,26 @@
 		<div class="page-header">
 			<h4>备注</h4>
 		</div>
-		<div class="remarkDiv" style="height: 60px;" @mouseenter="showBtn($event)" @mouseleave="hideBtn($event)">
-			<img title="zhangsan" src="../../image/user-thumbnail.png" style="width: 30px; height:30px;">
+		<div class="remarkDiv" style="height: 60px;" @mouseenter="showBtn($event)" @mouseleave="hideBtn($event)" v-for="remark in remarks">
+			<img :title="remark.createby" src="../../image/user-thumbnail.png" style="width: 30px; height:30px;">
 			<div style="position: relative; top: -40px; left: 40px;">
-				<h5>哎呦！</h5>
-				<font color="gray">联系人</font> <font color="gray">-</font> <b>李四先生-北京动力节点</b> <small style="color: gray;"> 2017-01-22 10:10:10 由zhangsan</small>
+				<h5>{{remark.notecontent}}</h5>
+				<font color="gray">客户</font> <font color="gray">-</font> <b>{{customer.name}}</b>
+				<small style="color: gray;" v-if="remark.editflag=='0'"> {{remark.createtime}} 由{{remark.createby}}创建</small>
+				<small style="color: gray;" v-else> {{remark.edittime}} 由{{remark.editby}}编辑</small>
 				<div style="position: relative; left: 500px; top: -30px; height: 30px; width: 100px; display: none;">
-					<a class="myHref" href="javascript:void(0);"><span class="glyphicon glyphicon-edit" style="font-size: 20px; color: #E6E6E6;" @mouseenter="showred($event)" @mouseleave="showgray($event)"></span></a>
+					<a class="myHref" href="javascript:void(0);" @click="editRk(remark)"><span class="glyphicon glyphicon-edit" style="font-size: 20px; color: #E6E6E6;" @mouseenter="showred($event)" @mouseleave="showgray($event)"></span></a>
 					&nbsp;&nbsp;&nbsp;&nbsp;
-					<a class="myHref" href="javascript:void(0);"><span class="glyphicon glyphicon-remove" style="font-size: 20px; color: #E6E6E6;" @mouseenter="showred($event)" @mouseleave="showgray($event)"></span></a>
+					<a class="myHref" href="javascript:void(0);" @click="deleteRk(remark.id)"><span class="glyphicon glyphicon-remove" style="font-size: 20px; color: #E6E6E6;" @mouseenter="showred($event)" @mouseleave="showgray($event)"></span></a>
 				</div>
 			</div>
 		</div>
 		<div id="remarkDiv" style="background-color: #E6E6E6; width: 870px; height: 90px;">
 			<form role="form" style="position: relative;top: 10px; left: 10px;">
-				<textarea id="remark" class="form-control" style="width: 850px; resize : none;" rows="2"  placeholder="添加备注..." @focus="showSub()"></textarea>
+				<textarea id="remark" class="form-control" style="width: 850px; resize : none;" rows="2"  placeholder="添加备注..." @focus="showSub()" v-model="addRemark.notecontent"></textarea>
 				<p id="cancelAndSaveBtn" style="position: relative;left: 737px; top: 10px; display: none;">
 					<button id="cancelBtn" type="button" class="btn btn-default" @click="hideSub">取消</button>
-					<button type="button" class="btn btn-primary">保存</button>
+					<button type="button" class="btn btn-primary" @click="addRk()">保存</button>
 				</p>
 			</form>
 		</div>

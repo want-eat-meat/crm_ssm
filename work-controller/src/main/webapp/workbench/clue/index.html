@@ -252,7 +252,7 @@
 					format: "yyyy-mm-dd",
 					autoclose: true,
 					todayBtn: true,
-					pickerPosition: "bottom-left"
+					pickerPosition: "top-left"
 				});
 			}
 		})
@@ -289,7 +289,7 @@
 							<label for="create-call" class="col-sm-2 control-label">称呼</label>
 							<div class="col-sm-10" style="width: 300px;">
 								<select class="form-control" id="create-call" v-model="addClue.appellation">
-								  <option v-for="(value, key) in apples" :value="value">{{value}}</option>
+								  <option v-for="apple in apples" :value="apple.id">{{apple.value}}</option>
 								</select>
 							</div>
 							<label for="create-surname" class="col-sm-2 control-label">姓名<span style="font-size: 15px; color: red;">*</span></label>
@@ -328,7 +328,7 @@
 							<label for="create-status" class="col-sm-2 control-label">线索状态</label>
 							<div class="col-sm-10" style="width: 300px;">
 								<select class="form-control" id="create-status" v-model="addClue.state">
-								  <option v-for="(value, key) in states" :value="value">{{value}}</option>
+								  <option v-for="state in states" :value="state.id">{{state.value}}</option>
 								</select>
 							</div>
 						</div>
@@ -337,7 +337,7 @@
 							<label for="create-source" class="col-sm-2 control-label">线索来源</label>
 							<div class="col-sm-10" style="width: 300px;">
 								<select class="form-control" id="create-source" v-model="addClue.source">
-								  <option v-for="(value, key) in sources" :value="value">{{value}}</option>
+								  <option v-for="source in sources" :value="source.id">{{source.value}}</option>
 								</select>
 							</div>
 						</div>
@@ -417,7 +417,7 @@
 							<label for="edit-call" class="col-sm-2 control-label">称呼</label>
 							<div class="col-sm-10" style="width: 300px;">
 								<select class="form-control" id="edit-call" v-model="editClue.appellation">
-								  <option v-for="(value, key) in apples" :value="value">{{value}}</option>
+								  <option v-for="apple in apples" :value="apple.id">{{apple.value}}</option>
 
 								</select>
 							</div>
@@ -457,7 +457,7 @@
 							<label for="edit-status" class="col-sm-2 control-label">线索状态</label>
 							<div class="col-sm-10" style="width: 300px;">
 								<select class="form-control" id="edit-status" v-model="editClue.state">
-								  <option v-for="(value, key) in states" :value="value">{{value}}</option>
+								  <option v-for="state in states" :value="state.id">{{state.value}}</option>
 								</select>
 							</div>
 						</div>
@@ -466,7 +466,7 @@
 							<label for="edit-source" class="col-sm-2 control-label">线索来源</label>
 							<div class="col-sm-10" style="width: 300px;">
 								<select class="form-control" id="edit-source" v-model="editClue.source">
-								  <option v-for="(value, key) in sources" :value="value">{{value}}</option>
+								  <option v-for="source in sources" :value="source.id">{{source.value}}</option>
 								</select>
 							</div>
 						</div>
@@ -557,7 +557,7 @@
 				      <div class="input-group-addon">线索来源</div>
 					  <select class="form-control" v-model="searchData.source">
 						  <option value=""></option>
-					  	  <option v-for="(value, key) in sources" :value="value">{{value}}</option>
+					  	  <option v-for="source in sources" :value="source.id">{{source.value}}</option>
 					  </select>
 				    </div>
 				  </div>
@@ -585,7 +585,7 @@
 				      <div class="input-group-addon">线索状态</div>
 					  <select class="form-control" v-model="searchData.state">
 						  <option value=""></option>
-						  <option v-for="(value, key) in states" :value="value">{{value}}</option>
+						  <option v-for="state in states" :value="state.id">{{state.value}}</option>
 					  </select>
 				    </div>
 				  </div>
@@ -616,13 +616,13 @@
 					<tbody>
 						<tr v-for="clue in pageResult.rows">
 							<td><input type="checkbox" class="checks" @click="checks()" :value="clue.id"/></td>
-							<td><a style="text-decoration: none; cursor: pointer;" @click="detailCe(clue.id)">{{clue.fullname}}{{clue.appellation}}</a></td>
+							<td><a style="text-decoration: none; cursor: pointer;" @click="detailCe(clue.id)">{{clue.fullname}}{{clue.appelname}}</a></td>
 							<td>{{clue.company}}</td>
 							<td>{{clue.phone}}</td>
 							<td>{{clue.mphone}}</td>
-							<td>{{clue.source}}</td>
+							<td>{{clue.sourcename}}</td>
 							<td>{{clue.ownername}}</td>
-							<td>{{clue.state}}</td>
+							<td>{{clue.statename}}</td>
 						</tr>
 					</tbody>
 				</table>

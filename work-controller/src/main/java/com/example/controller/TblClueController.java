@@ -1,6 +1,7 @@
 package com.example.controller;
 
 import com.example.pojo.TblClue;
+import com.example.pojo.TblDicValue;
 import com.example.pojo.TblUser;
 import com.example.service.TblClueService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,7 +11,9 @@ import com.example.utils.*;
 import com.example.exception.ResultException;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
 
 @RestController
 @RequestMapping("clue")
@@ -53,14 +56,53 @@ public class TblClueController {
                           @RequestParam(value = "source", required = false)String source,
                           @RequestParam(value = "owner", required = false)String owner,
                           @RequestParam(value = "mphone", required = false)String mphone,
-                          @RequestParam(value = "state", required = false)String state){
+                          @RequestParam(value = "state", required = false)String state,
+                          HttpServletRequest request){
         try{
             PageResult result = clueService.list(start, count, fullname, company, phone, source, owner, mphone, state);
+            //添加信息
+            HashMap<String, Set<TblDicValue>> dicMap =  (HashMap<String, Set<TblDicValue>>)request.getSession().getServletContext().getAttribute("dic");
+
+            List<TblClue> clues = (List<TblClue>)result.getRows();
+            for(TblClue clue : clues){
+                setClueMsg(dicMap, clue);
+            }
             return Result.success(result);
         }catch (ResultException e){
             return Result.fail(e);
         }
     }
+
+    private void setClueMsg( HashMap<String, Set<TblDicValue>> dicMap, TblClue clue) {
+        Set<TblDicValue> appels = dicMap.get("appellation");
+        Set<TblDicValue> states = dicMap.get("clueState");
+        Set<TblDicValue> sources = dicMap.get("source");
+        if(clue.getAppellation() != null && !"".equals(clue.getAppellation())){
+            for(TblDicValue value : appels){
+                if(clue.getAppellation().equals(value.getId())){
+                    clue.setAppelname(value.getValue());
+                    break;
+                }
+            }
+        }
+        if(clue.getState() != null && !"".equals(clue.getState())){
+            for(TblDicValue value : states){
+                if(clue.getState().equals(value.getId())){
+                    clue.setStatename(value.getValue());
+                    break;
+                }
+            }
+        }
+        if(clue.getSource() != null && !"".equals(clue.getSource())){
+            for(TblDicValue value : sources){
+                if(clue.getSource().equals(value.getId())){
+                    clue.setSourcename(value.getValue());
+                    break;
+                }
+            }
+        }
+    }
+
     @RequestMapping(value = "delete",method = RequestMethod.POST)
     public Result delete(@RequestBody List<String> ids){
         try{
@@ -71,9 +113,11 @@ public class TblClueController {
         }
     }
     @RequestMapping("edit")
-    public Result getById(String id){
+    public Result getById(String id, HttpServletRequest request){
+        HashMap<String, Set<TblDicValue>> dicMap =  (HashMap<String, Set<TblDicValue>>)request.getSession().getServletContext().getAttribute("dic");
         try{
             TblClue clue = clueService.getById(id);
+            setClueMsg(dicMap, clue);
             return Result.success(clue);
         }catch (ResultException e){
             return Result.fail(e);

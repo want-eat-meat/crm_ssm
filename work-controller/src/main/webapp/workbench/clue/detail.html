@@ -2,12 +2,13 @@
 <html>
 <head>
 <meta charset="UTF-8">
-
-<link href="/jquery/bootstrap_3.3.0/css/bootstrap.min.css" type="text/css" rel="stylesheet" />
-<script type="text/javascript" src="/jquery/jquery-1.11.1-min.js"></script>
-<script type="text/javascript" src="/jquery/bootstrap_3.3.0/js/bootstrap.min.js"></script>
-	<script src="../../jquery/vue.min.js"></script>
-	<script src="../../jquery/axios.min.js"></script>
+	<link href="/jquery/bootstrap_3.3.0/css/bootstrap.min.css" type="text/css" rel="stylesheet" />
+	<link href="/jquery/bootstrap-datetimepicker-master/css/bootstrap-datetimepicker.min.css" type="text/css" rel="stylesheet" />
+	<script type="text/javascript" src="/jquery/jquery-1.11.1-min.js"></script>
+	<script type="text/javascript" src="/jquery/bootstrap_3.3.0/js/bootstrap.min.js"></script>
+	<script type="text/javascript" src="/jquery/bootstrap-datetimepicker-master/js/bootstrap-datetimepicker.js"></script>
+	<script type="text/javascript" src="../../jquery/vue.min.js"></script>
+	<script type="text/javascript" src="../../jquery/axios.min.js"></script>
 </head>
 <body>
 <script type="text/javascript">
@@ -333,6 +334,14 @@
 				this.getClue(clueId);
 				this.listRk();
                 this.listRelating();
+				$(".time").datetimepicker({
+					minView: "month",
+					language: "zh-CN",
+					format: "yyyy-mm-dd",
+					autoclose: true,
+					todayBtn: true,
+					pickerPosition: "top-left"
+				});
 			}
 		})
 	});
@@ -449,7 +458,7 @@
                             <div class="col-sm-10" style="width: 300px;">
                                 <select class="form-control" id="edit-call" v-model="editClue.appellation">
                                     <option></option>
-                                    <option v-for="(value, key) in apples" :value="value">{{value}}</option>
+                                    <option v-for="apple in apples" :value="apple.id">{{apple.value}}</option>
                                 </select>
                             </div>
                             <label for="edit-surname" class="col-sm-2 control-label">姓名<span style="font-size: 15px; color: red;">*</span></label>
@@ -489,7 +498,7 @@
                             <div class="col-sm-10" style="width: 300px;">
                                 <select class="form-control" id="edit-status" v-model="editClue.state">
                                     <option></option>
-                                    <option v-for="(value, key) in states" :value="value">{{value}}</option>
+                                    <option v-for="state in states" :value="state.id">{{state.value}}</option>
                                 </select>
                             </div>
                         </div>
@@ -499,7 +508,7 @@
                             <div class="col-sm-10" style="width: 300px;">
                                 <select class="form-control" id="edit-source" v-model="editClue.source">
                                     <option></option>
-                                    <option v-for="(value, key) in sources" :value="value">{{value}}</option>
+                                    <option v-for="source in sources" :value="source.id">{{source.value}}</option>
                                 </select>
                             </div>
                         </div>
@@ -523,7 +532,7 @@
                             <div class="form-group">
                                 <label for="edit-nextContactTime" class="col-sm-2 control-label">下次联系时间</label>
                                 <div class="col-sm-10" style="width: 300px;">
-                                    <input type="text" class="form-control" id="edit-nextContactTime" value="2017-05-01" v-model="editClue.nextcontacttime">
+                                    <input type="text" class="form-control time" id="edit-nextContactTime" value="2017-05-01" v-model="editClue.nextcontacttime">
                                 </div>
                             </div>
                         </div>
@@ -602,9 +611,9 @@
 		</div>
 		<div style="position: relative; left: 40px; height: 30px; top: 40px;">
 			<div style="width: 300px; color: gray;">线索状态</div>
-			<div style="width: 300px;position: relative; left: 200px; top: -20px;"><b>{{clue.state}}</b></div>
+			<div style="width: 300px;position: relative; left: 200px; top: -20px;"><b>{{clue.statename}}</b></div>
 			<div style="width: 300px;position: relative; left: 450px; top: -40px; color: gray;">线索来源</div>
-			<div style="width: 300px;position: relative; left: 650px; top: -60px;"><b>{{clue.source}}</b></div>
+			<div style="width: 300px;position: relative; left: 650px; top: -60px;"><b>{{clue.sourcename}}</b></div>
 			<div style="height: 1px; width: 400px; background: #D5D5D5; position: relative; top: -60px;"></div>
 			<div style="height: 1px; width: 400px; background: #D5D5D5; position: relative; top: -60px; left: 450px;"></div>
 		</div>
@@ -661,7 +670,7 @@
 			<img :title="remark.createname" src="../../image/user-thumbnail.png" style="width: 30px; height:30px;">
 			<div style="position: relative; top: -40px; left: 40px;" >
 				<h5>{{remark.notecontent}}</h5>
-				<font color="gray">线索</font> <font color="gray">-</font> <b>{{clue.fullname}}{{clue.appellation}}-{{clue.company}}</b>
+				<font color="gray">线索</font> <font color="gray">-</font> <b>{{clue.fullname}}{{clue.appelname}}-{{clue.company}}</b>
 				<small style="color: gray;" v-if="remark.editflag=='0'"> {{remark.createtime}} 由{{remark.createname}}编辑</small>
 				<small style="color: gray;" v-else> {{remark.edittime}} 由{{remark.editname}}修改</small>
 				<div style="position: relative; left: 500px; top: -30px; height: 30px; width: 100px; display: none;">
