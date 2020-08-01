@@ -146,7 +146,7 @@ public class TblActivityServiceImpl implements TblActivityService {
     }
 
     @Override
-    public List<TblActivity> listAct(String data, List<String> ids) {
+    public PageResult listAct(String data, List<String> ids, int start, int count) {
         TblActivityExample activityExample = new TblActivityExample();
         TblActivityExample.Criteria criteria = activityExample.createCriteria();
         if(data != null && !"".equals(data)){
@@ -156,11 +156,14 @@ public class TblActivityServiceImpl implements TblActivityService {
             criteria.andIdNotIn(ids);
         }
         try{
+            PageHelper.startPage(start, count);
             List<TblActivity> activities = activityMapper.selectByExample(activityExample);
-            for(TblActivity activity : activities){
+            PageInfo pageInfo = new PageInfo(activities);
+            List<TblActivity> list =  pageInfo.getList();
+            for(TblActivity activity : list){
                 activity.setOwnername(userMapper.selectByPrimaryKey(activity.getOwner()).getName());
             }
-            return activities;
+            return new PageResult(pageInfo.getTotal(), pageInfo.getList());
         }catch (Exception e){
             throw new ResultException(ResultEnum.FAIL);
         }

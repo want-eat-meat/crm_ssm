@@ -1,11 +1,11 @@
 package com.example.service.impl;
 
 import com.example.enums.ResultEnum;
+import com.example.mapper.TblActivityMapper;
 import com.example.mapper.TblContactsRemarkMapper;
 import com.example.mapper.TblUserMapper;
-import com.example.pojo.TblContactsExample;
-import com.example.pojo.TblContactsRemark;
-import com.example.pojo.TblContactsRemarkExample;
+import com.example.mapper.TblContactsActivityRelationMapper;
+import com.example.pojo.*;
 import com.example.service.TblContactRemarkService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.example.utils.*;
 import com.example.exception.ResultException;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -23,6 +24,10 @@ public class TblContactRemarkServiceImpl implements TblContactRemarkService {
     private TblContactsRemarkMapper remarkMapper;
     @Autowired
     private TblUserMapper userMapper;
+    @Autowired
+    private TblContactsActivityRelationMapper relationMapper;
+    @Autowired
+    private TblActivityMapper activityMapper;
 
     @Override
     public void add(TblContactsRemark remark) {
@@ -76,6 +81,55 @@ public class TblContactRemarkServiceImpl implements TblContactRemarkService {
     public void delete(String id) {
         try{
             remarkMapper.deleteByPrimaryKey(id);
+        }catch (Exception e){
+            throw new ResultException(ResultEnum.FAIL);
+        }
+    }
+
+    @Override
+    public void addRelation(List<String> ids, String id) {
+        try{
+            for(String rkId : ids){
+                TblContactsActivityRelation relation = new TblContactsActivityRelation();
+                relation.setId(UUIDUtil.getUUID());
+                relation.setActivityid(rkId);
+                relation.setContactsid(id);
+                relationMapper.insert(relation);
+            }
+        }catch (Exception e){
+            throw new ResultException(ResultEnum.FAIL);
+        }
+    }
+
+    @Override
+    public List<TblActivity> listRelations(String id) {
+        List<TblActivity> activities = new ArrayList<>();
+        TblContactsActivityRelationExample relationExample = new TblContactsActivityRelationExample();
+        relationExample.createCriteria().andContactsidEqualTo(id);
+        //根据联系人id查询关联表
+        List<TblContactsActivityRelation> relations = relationMapper.selectByExample(relationExample);
+        if(relations == null || relations.size() == 0){
+            throw new ResultException(ResultEnum.SUCCESS_NODATA);
+        }
+        //根据关联表集合查询市场活动
+        try{
+            for(TblContactsActivityRelation relation : relations){
+                TblActivity activity = activityMapper.selectByPrimaryKey(relation.getActivityid());
+                activity.setOwner(userMapper.selectByPrimaryKey(activity.getOwner()).getName());
+                activities.add(activity);
+            }
+        }catch (Exception e){
+            throw new ResultException(ResultEnum.FAIL);
+        }
+        return activities;
+    }
+
+    @Override
+    public void deleteRelation(String actId, String ctId) {
+        TblContactsActivityRelationExample relationExample = new TblContactsActivityRelationExample();
+        relationExample.createCriteria().andActivityidEqualTo(actId).andContactsidEqualTo(ctId);
+        try{
+            relationMapper.deleteByExample(relationExample);
         }catch (Exception e){
             throw new ResultException(ResultEnum.FAIL);
         }

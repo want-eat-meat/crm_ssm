@@ -4,9 +4,12 @@
 <meta charset="UTF-8">
 	<link href="/jquery/bootstrap_3.3.0/css/bootstrap.min.css" type="text/css" rel="stylesheet" />
 	<link href="/jquery/bootstrap-datetimepicker-master/css/bootstrap-datetimepicker.min.css" type="text/css" rel="stylesheet" />
+	<link href="/jquery/bs_pagination/jquery.bs_pagination.min.css"/>
 	<script type="text/javascript" src="/jquery/jquery-1.11.1-min.js"></script>
 	<script type="text/javascript" src="/jquery/bootstrap_3.3.0/js/bootstrap.min.js"></script>
 	<script type="text/javascript" src="/jquery/bootstrap-datetimepicker-master/js/bootstrap-datetimepicker.js"></script>
+	<script type="text/javascript" src="/jquery/bs_pagination/jquery.bs_pagination.min.js"></script>
+	<script type="text/javascript" src="/jquery/bs_pagination/en.js"></script>
 	<script type="text/javascript" src="../../jquery/vue.min.js"></script>
 	<script type="text/javascript" src="../../jquery/axios.min.js"></script>
 </head>
@@ -39,10 +42,15 @@
 				editRemark : {},
 				//查询活动的条件
 				searchLimit : "",
-				//所有活动集合
-				activities : [],
+				//分页结果
+				pageResult : {},
                 //关联集合
-                relations : []
+                relations : [],
+				//分页信息
+				pageInfo : {
+					start : 1,
+					count : 5
+				}
 			},
 			methods : {
 				//提交按钮显示与隐藏切换
@@ -240,22 +248,44 @@
 				},
 				//新增关联
 				addCAR : function () {
-					this.listAct();
+					this.listAct(this.pageInfo.start, this.pageInfo.count);
 					$("#bundModal").modal("show");
 				},
 				//查询所有activity
-				listAct : function () {
+				listAct : function (start, count) {
 				    var ids = new Array();
 				    for(var i = 0; i <this.relations.length; i++){
 				        ids.push(this.relations[i].id);
                     }
 					var url = "/clueRemark/listAct";
-				    var data = "data=" + this.searchLimit + "&ids=" + ids;
+				    var data = "data=" + this.searchLimit +
+							"&ids=" + ids +
+							"&start=" + start +
+							"&count=" + count;
 					var self = this;
 					axios.post(url, data).then(function (value) {
 						self.result = value.data;
 						if(self.result.status == 200){
-							self.activities = self.result.data;
+							self.pageResult = self.result.data;
+							var total = self.pageResult.total;
+							var totalPage = total % count == 0 ? total / count : parseInt(total / count) + 1;
+							$("#activityPage").bs_pagination({
+								currentPage: start,
+								rowsPerPage: count,
+								maxRowsPerPage: 20,
+								totalPages: totalPage,
+								totalRows: total,
+								visiblePageLinks: 3,
+								showRowsPerPage: true,
+								showGoToPage: true,
+								showRowsInfo: true,
+								showRowsDefaultInfo: false,
+								onChangePage: function (event, obj) {
+									self.pageInfo.start = obj.currentPage;
+									self.pageInfo.count = obj.rowsPerPage;
+									self.listAct(obj.currentPage, obj.rowsPerPage);
+								}
+							});
 						}else{
 							alert(self.result.msg);
 						}
@@ -362,7 +392,7 @@
 					<div class="btn-group" style="position: relative; top: 18%; left: 8px;">
 						<form class="form-inline" role="form">
 						  <div class="form-group has-feedback">
-						    <input type="text" class="form-control" style="width: 300px;" placeholder="请输入市场活动名称，支持模糊查询" v-model="searchLimit" @blur="listAct()">
+						    <input type="text" class="form-control" style="width: 300px;" placeholder="请输入市场活动名称，支持模糊查询" v-model="searchLimit" @blur="listAct(pageInfo.start, pageInfo.count)">
 						    <span class="glyphicon glyphicon-search form-control-feedback"></span>
 						  </div>
 						</form>
@@ -379,7 +409,7 @@
 							</tr>
 						</thead>
 						<tbody>
-							<tr v-for="activity in activities">
+							<tr v-for="activity in pageResult.rows">
 								<td><input type="checkbox" class="checks" :value="activity.id" @click="checks()"/></td>
 								<td>{{activity.name}}</td>
 								<td>{{activity.startdate}}</td>
@@ -389,6 +419,7 @@
 						</tbody>
 					</table>
 				</div>
+				<div id="activityPage"></div>
 				<div class="modal-footer">
 					<button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
 					<button type="button" class="btn btn-primary" @click="relating()">关联</button>

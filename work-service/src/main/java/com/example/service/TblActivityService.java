@@ -23,5 +23,5 @@ public interface TblActivityService {
 
     void update(TblActivity activity);
 
-    List<TblActivity> listAct(String data, List<String> ids);
+    PageResult listAct(String data, List<String> ids, int start, int count);
 }

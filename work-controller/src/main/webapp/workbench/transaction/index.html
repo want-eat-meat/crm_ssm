@@ -15,11 +15,40 @@
 </head>
 <body>
 <script type="text/javascript">
-
+	var url = "/tran";
 	$(function(){
+		var vue = new Vue({
+			el : "#work_area",
+			data : {
+				//方法返回结果
+				result : {},
+				//阶段
+				stages : [],
+				//类型
+				transactionTypes : [],
+				//来源
+				sources : [],
+			},
+			methods : {
+				//查询初始化信息
+				listMsg : function () {
+					var uri = url + "/listMessage";
+					var self = this;
+					axios.get(uri).then(function (value) {
+						self.result = value.data;
+						if(self.result.status == 200){
+							self.stages = self.result.data.stages;
+							self.transactionTypes = self.result.data.transactionTypes;
+							self.sources = self.result.data.sources;
+						}
+					})
+				}
+			},
 
-
-
+			mounted : function () {
+				this.listMsg();
+			}
+		})
 	});
 
 </script>
@@ -65,15 +94,7 @@
 				      <div class="input-group-addon">阶段</div>
 					  <select class="form-control">
 					  	<option></option>
-					  	<option>资质审查</option>
-					  	<option>需求分析</option>
-					  	<option>价值建议</option>
-					  	<option>确定决策者</option>
-					  	<option>提案/报价</option>
-					  	<option>谈判/复审</option>
-					  	<option>成交</option>
-					  	<option>丢失的线索</option>
-					  	<option>因竞争丢失关闭</option>
+					  	<option v-for="stage in stages" :value="stage.id">{{stage.text}}</option>
 					  </select>
 				    </div>
 				  </div>
@@ -83,8 +104,7 @@
 				      <div class="input-group-addon">类型</div>
 					  <select class="form-control">
 					  	<option></option>
-					  	<option>已有业务</option>
-					  	<option>新业务</option>
+					  	<option v-for="type in transactionTypes" :value="type.id">{{type.text}}</option>
 					  </select>
 				    </div>
 				  </div>
@@ -94,20 +114,7 @@
 				      <div class="input-group-addon">来源</div>
 				      <select class="form-control" id="create-clueSource">
 						  <option></option>
-						  <option>广告</option>
-						  <option>推销电话</option>
-						  <option>员工介绍</option>
-						  <option>外部介绍</option>
-						  <option>在线商场</option>
-						  <option>合作伙伴</option>
-						  <option>公开媒介</option>
-						  <option>销售邮件</option>
-						  <option>合作伙伴研讨会</option>
-						  <option>内部研讨会</option>
-						  <option>交易会</option>
-						  <option>web下载</option>
-						  <option>web调研</option>
-						  <option>聊天</option>
+						  <option v-for="source in sources" :value="source.id">{{source.text}}</option>
 						</select>
 				    </div>
 				  </div>

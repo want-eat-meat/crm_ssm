@@ -1,15 +1,16 @@
 package com.example.controller;
 
+import com.example.pojo.TblActivity;
 import com.example.pojo.TblContactsRemark;
 import com.example.pojo.TblUser;
+import com.example.service.TblActivityService;
 import com.example.service.TblContactRemarkService;
+import com.example.utils.PageResult;
 import com.example.utils.Result;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 
@@ -19,6 +20,8 @@ public class TblContactRemarkController {
 
     @Autowired
     private TblContactRemarkService remarkService;
+    @Autowired
+    private TblActivityService activityService;
 
     @Value("${session.user}")
     private String USER;
@@ -52,6 +55,35 @@ public class TblContactRemarkController {
     @RequestMapping(value = "delete", method = RequestMethod.POST)
     public Result delete(String id){
         remarkService.delete(id);
+        return Result.success();
+    }
+
+    @RequestMapping(value = "listAct", method = RequestMethod.POST)
+    public Result listAct(@RequestParam("data") String data,
+                          @RequestParam("ids") List<String> ids,
+                          @RequestParam("start") int start,
+                          @RequestParam("count") int count){
+        PageResult pageResult = activityService.listAct(data, ids, start, count);
+        return Result.success(pageResult);
+    }
+
+    @RequestMapping("addRelation")
+    public Result addRelation(
+            @RequestParam("ids") List<String> ids,
+            @RequestParam("id") String id){
+        remarkService.addRelation(ids, id);
+        return Result.success();
+    }
+
+    @RequestMapping("listRelations")
+    public Result listRelations(String id){
+        List<TblActivity> activities = remarkService.listRelations(id);
+        return Result.success(activities);
+    }
+
+    @RequestMapping("deleteRelation")
+    public Result deleteRelation(String ActId, String CtId){
+        remarkService.deleteRelation(ActId, CtId);
         return Result.success();
     }
 }

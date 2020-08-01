@@ -61,9 +61,11 @@ public class TblClueRemarkController {
 
     @RequestMapping(value = "listAct", method = RequestMethod.POST)
     public Result listAct(@RequestParam("data") String data,
-                          @RequestParam("ids") List<String> ids){
-        List<TblActivity> activities = activityService.listAct(data, ids);
-        return Result.success(activities);
+                          @RequestParam("ids") List<String> ids,
+                          @RequestParam("start") int start,
+                          @RequestParam("count") int count){
+        PageResult pageResult = activityService.listAct(data, ids, start, count);
+        return Result.success(pageResult);
     }
 
     @RequestMapping(value = "addRelation", method = RequestMethod.POST)

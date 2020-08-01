@@ -4,9 +4,12 @@
 <meta charset="UTF-8">
 	<link href="/jquery/bootstrap_3.3.0/css/bootstrap.min.css" type="text/css" rel="stylesheet" />
 	<link href="/jquery/bootstrap-datetimepicker-master/css/bootstrap-datetimepicker.min.css" type="text/css" rel="stylesheet" />
+	<link href="/jquery/bs_pagination/jquery.bs_pagination.min.css"/>
 	<script type="text/javascript" src="/jquery/jquery-1.11.1-min.js"></script>
 	<script type="text/javascript" src="/jquery/bootstrap_3.3.0/js/bootstrap.min.js"></script>
 	<script type="text/javascript" src="/jquery/bootstrap-datetimepicker-master/js/bootstrap-datetimepicker.js"></script>
+	<script type="text/javascript" src="/jquery/bs_pagination/jquery.bs_pagination.min.js"></script>
+	<script type="text/javascript" src="/jquery/bs_pagination/en.js"></script>
 	<script type="text/javascript" src="../../jquery/vue.min.js"></script>
 	<script type="text/javascript" src="../../jquery/axios.min.js"></script>
 </head>
@@ -42,6 +45,19 @@
 				remarks : {},
 				//修改备注
 				editRemark : {},
+				//搜索条件
+				searchLimit : "",
+				//分页结果
+				pageResult : {},
+				//分页信息
+				pageInfo : {
+					start : 1,
+					count : 5
+				},
+				//关联集合
+				relations : [],
+				//解除关联
+				deleteRelation : {},
 			},
 			methods : {
 				//交互事件
@@ -70,6 +86,13 @@
 				},
 				showgray : function (event) {
 					$(event.target).css("color","#E6E6E6");
+				},
+				//选择框事件
+				checkAll : function(){
+					$(".checks").prop("checked", $("#checkAll").prop("checked"));
+				},
+				checks : function(){
+					$("#checkAll").prop("checked", $(".checks").size() == $(".checks:checked").size());
 				},
 				//查询初始数据
 				listMsg : function () {
@@ -223,11 +246,121 @@
 							alert(self.result.msg);
 						}
 					})
+				},
+				//点击关联市场的按钮
+				linkAct :function(){
+					this.listAct(this.pageInfo.start, this.pageInfo.count);
+					$("#bundModal").modal("show");
+				},
+				//关联市场活动列表
+				listAct : function (start, count) {
+					var ids = new Array();
+					if(this.relations != null) {
+						for (var i = 0; i < this.relations.length; i++) {
+							ids.push(this.relations[i].id);
+						}
+					}
+					var url = "/contactRemark/listAct";
+					var data = "data=" + this.searchLimit +
+							"&ids=" + ids +
+							"&start=" + start +
+							"&count=" + count;
+					var self = this;
+					axios.post(url, data).then(function (value) {
+						self.result = value.data;
+						if(self.result.status == 200){
+							self.pageResult = self.result.data;
+							var total = self.pageResult.total;
+							var totalPage = total % count == 0 ? total / count : parseInt(total / count) + 1;
+							$("#activityPage").bs_pagination({
+								currentPage: start,
+								rowsPerPage: count,
+								maxRowsPerPage: 20,
+								totalPages: totalPage,
+								totalRows: total,
+								visiblePageLinks: 3,
+								showRowsPerPage: true,
+								showGoToPage: true,
+								showRowsInfo: true,
+								showRowsDefaultInfo: false,
+								onChangePage: function (event, obj) {
+									self.pageInfo.start = obj.currentPage;
+									self.pageInfo.count = obj.rowsPerPage;
+									self.listAct(obj.currentPage, obj.rowsPerPage);
+								}
+							});
+						}else{
+							alert(self.result.msg);
+						}
+					})
+				},
+				//添加关联
+				addRt : function () {
+					if($(".checks:checked").size() == 0){
+						alert("请选择要关联的市场活动");
+						return;
+					}
+					var ids = new Array();
+					$(".checks:checked").each(function () {
+						ids.push($(this).val());
+					})
+					var uri = "/contactRemark/addRelation";
+					var data = "ids=" + ids + "&id=" + contactId;
+					var self = this;
+					axios.post(uri, data).then(function (value) {
+						self.result = value.data;
+						if(self.result.status == 200){
+							$("#bundModal").modal("hide");
+							self.listRts();
+						}else{
+							alert(self.result.msg);
+						}
+					})
+				},
+				//查询关联集合
+				listRts : function () {
+					var uri = "/contactRemark/listRelations";
+					var data = "id=" + contactId;
+					var self = this;
+					axios.post(uri, data).then(function (value) {
+						self.result = value.data;
+						if(self.result.status == 200){
+							self.relations = self.result.data;
+						}else{
+							alert(self.result.msg);
+						}
+					})
+				},
+				//跳转市场活动详情
+				showActivity : function (id) {
+					window.location.href="../activity/detail.html?id=" + id;
+				},
+				//解除关联按钮
+				deleteRt : function (id, index) {
+					this.deleteRelation.id = id;
+					this.deleteRelation.index = index;
+					$("#unbundActivityModal").modal("show");
+				},
+				submitDelRt : function () {
+					var uri = "/contactRemark/deleteRelation";
+					var data = "ActId=" + this.deleteRelation.id +
+							"&CtId=" + contactId;
+					var self = this;
+					axios.post(uri, data).then(function (value) {
+						self.result = value.data;
+						if(self.result.status == 200){
+							$("#unbundActivityModal").modal("hide");
+							self.relations.splice(self.deleteRelation.index, 1);
+						}else{
+							alert(self.result.msg);
+						}
+					})
 				}
 			},
 			mounted : function () {
 				this.getCt();
 				this.listRk();
+				this.listRts();
 				$(".time").datetimepicker({
 					minView: "month",
 					language: "zh-CN",
@@ -257,14 +390,15 @@
 				</div>
 				<div class="modal-footer">
 					<button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
-					<button type="button" class="btn btn-danger" data-dismiss="modal">解除</button>
+					<button type="button" class="btn btn-danger" @click="submitDelRt()">解除</button>
 				</div>
 			</div>
 		</div>
 	</div>
 	
 	<!-- 联系人和市场活动关联的模态窗口 -->
-	<div class="modal fade" id="bundActivityModal" role="dialog">
+	<!-- 关联市场活动的模态窗口 -->
+	<div class="modal fade" id="bundModal" role="dialog">
 		<div class="modal-dialog" role="document" style="width: 80%;">
 			<div class="modal-content">
 				<div class="modal-header">
@@ -276,44 +410,38 @@
 				<div class="modal-body">
 					<div class="btn-group" style="position: relative; top: 18%; left: 8px;">
 						<form class="form-inline" role="form">
-						  <div class="form-group has-feedback">
-						    <input type="text" class="form-control" style="width: 300px;" placeholder="请输入市场活动名称，支持模糊查询">
-						    <span class="glyphicon glyphicon-search form-control-feedback"></span>
-						  </div>
+							<div class="form-group has-feedback">
+								<input type="text" class="form-control" style="width: 300px;" placeholder="请输入市场活动名称，支持模糊查询" v-model="searchLimit" @blur="listAct(pageInfo.start, pageInfo.count)">
+								<span class="glyphicon glyphicon-search form-control-feedback"></span>
+							</div>
 						</form>
 					</div>
-					<table id="activityTable2" class="table table-hover" style="width: 900px; position: relative;top: 10px;">
+					<table class="table table-hover" style="width: 900px; position: relative;top: 10px;">
 						<thead>
-							<tr style="color: #B3B3B3;">
-								<td><input type="checkbox"/></td>
-								<td>名称</td>
-								<td>开始日期</td>
-								<td>结束日期</td>
-								<td>所有者</td>
-								<td></td>
-							</tr>
+						<tr style="color: #B3B3B3;">
+							<td><input type="checkbox" id="checkAll" @click="checkAll()"/></td>
+							<td>名称</td>
+							<td>开始日期</td>
+							<td>结束日期</td>
+							<td>所有者</td>
+							<td></td>
+						</tr>
 						</thead>
 						<tbody>
-							<tr>
-								<td><input type="checkbox"/></td>
-								<td>发传单</td>
-								<td>2020-10-10</td>
-								<td>2020-10-20</td>
-								<td>zhangsan</td>
-							</tr>
-							<tr>
-								<td><input type="checkbox"/></td>
-								<td>发传单</td>
-								<td>2020-10-10</td>
-								<td>2020-10-20</td>
-								<td>zhangsan</td>
-							</tr>
+						<tr v-for="activity in pageResult.rows">
+							<td><input type="checkbox" class="checks" :value="activity.id" @click="checks()"/></td>
+							<td>{{activity.name}}</td>
+							<td>{{activity.startdate}}</td>
+							<td>{{activity.enddate}}</td>
+							<td>{{activity.ownername}}</td>
+						</tr>
 						</tbody>
 					</table>
 				</div>
+				<div id="activityPage"></div>
 				<div class="modal-footer">
 					<button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
-					<button type="button" class="btn btn-primary" data-dismiss="modal">关联</button>
+					<button type="button" class="btn btn-primary" @click="addRt()">关联</button>
 				</div>
 			</div>
 		</div>
@@ -648,19 +776,19 @@
 						</tr>
 					</thead>
 					<tbody>
-						<tr>
-							<td><a href="../activity/detail.html" style="text-decoration: none;">发传单</a></td>
-							<td>2020-10-10</td>
-							<td>2020-10-20</td>
-							<td>zhangsan</td>
-							<td><a href="javascript:void(0);" data-toggle="modal" data-target="#unbundActivityModal" style="text-decoration: none;"><span class="glyphicon glyphicon-remove"></span>解除关联</a></td>
+						<tr v-for="(relation, index) in relations">
+							<td><a href="#" @click="showActivity(relation.id)" style="text-decoration: none;">{{relation.name}}</a></td>
+							<td>{{relation.startdate}}</td>
+							<td>{{relation.enddate}}</td>
+							<td>{{relation.owner}}</td>
+							<td><a href="javascript:void(0)" @click="deleteRt(relation.id, index)" style="text-decoration: none;"><span class="glyphicon glyphicon-remove"></span>解除关联</a></td>
 						</tr>
 					</tbody>
 				</table>
 			</div>
 			
 			<div>
-				<a href="javascript:void(0);" data-toggle="modal" data-target="#bundActivityModal" style="text-decoration: none;"><span class="glyphicon glyphicon-plus"></span>关联市场活动</a>
+				<a href="javascript:void(0);"@click="linkAct()" style="text-decoration: none;"><span class="glyphicon glyphicon-plus"></span>关联市场活动</a>
 			</div>
 		</div>
 	</div>
