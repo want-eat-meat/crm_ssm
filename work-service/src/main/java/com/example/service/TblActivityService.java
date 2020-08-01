@@ -22,4 +22,6 @@ public interface TblActivityService {
     TblActivity getById(String id);
 
     void update(TblActivity activity);
+
+    List<TblActivity> listAct(String data, List<String> ids);
 }

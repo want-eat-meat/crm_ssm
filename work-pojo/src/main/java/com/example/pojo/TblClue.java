@@ -47,6 +47,36 @@ public class TblClue {
 
     private String editname;
 
+    private String appelname;
+
+    private String statename;
+
+    private String sourcename;
+
+    public String getAppelname() {
+        return appelname;
+    }
+
+    public void setAppelname(String appelname) {
+        this.appelname = appelname;
+    }
+
+    public String getStatename() {
+        return statename;
+    }
+
+    public void setStatename(String statename) {
+        this.statename = statename;
+    }
+
+    public String getSourcename() {
+        return sourcename;
+    }
+
+    public void setSourcename(String sourcename) {
+        this.sourcename = sourcename;
+    }
+
     public String getOwnername() {
         return ownername;
     }

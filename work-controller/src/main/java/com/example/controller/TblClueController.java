@@ -50,7 +50,7 @@ public class TblClueController {
     @RequestMapping(value = "/listAll", method = RequestMethod.POST)
     public Result listAll(@RequestParam(value = "start", required = true, defaultValue = "1")int start,
                           @RequestParam(value = "count", required = true, defaultValue = "5")int count,
-                          @RequestParam(value = "fullname", required = false) String fullname,
+                          @RequestParam(value = "fullname", required = false)String fullname,
                           @RequestParam(value = "company", required = false)String company,
                           @RequestParam(value = "phone", required = false)String phone,
                           @RequestParam(value = "source", required = false)String source,
@@ -58,19 +58,14 @@ public class TblClueController {
                           @RequestParam(value = "mphone", required = false)String mphone,
                           @RequestParam(value = "state", required = false)String state,
                           HttpServletRequest request){
-        try{
-            PageResult result = clueService.list(start, count, fullname, company, phone, source, owner, mphone, state);
-            //添加信息
-            HashMap<String, Set<TblDicValue>> dicMap =  (HashMap<String, Set<TblDicValue>>)request.getSession().getServletContext().getAttribute("dic");
-
-            List<TblClue> clues = (List<TblClue>)result.getRows();
-            for(TblClue clue : clues){
-                setClueMsg(dicMap, clue);
-            }
-            return Result.success(result);
-        }catch (ResultException e){
-            return Result.fail(e);
+        PageResult result = clueService.list(start, count, fullname, company, phone, source, owner, mphone, state);
+        //添加信息
+        HashMap<String, Set<TblDicValue>> dicMap =  (HashMap<String, Set<TblDicValue>>)request.getSession().getServletContext().getAttribute("dic");
+        List<TblClue> clues = (List<TblClue>)result.getRows();
+        for(TblClue clue : clues){
+            setClueMsg(dicMap, clue);
         }
+        return Result.success(result);
     }
 
     private void setClueMsg( HashMap<String, Set<TblDicValue>> dicMap, TblClue clue) {
@@ -105,23 +100,15 @@ public class TblClueController {
 
     @RequestMapping(value = "delete",method = RequestMethod.POST)
     public Result delete(@RequestBody List<String> ids){
-        try{
-            clueService.delete(ids);
-            return Result.success();
-        }catch (ResultException e){
-            return Result.fail(e);
-        }
+        clueService.delete(ids);
+        return Result.success();
     }
     @RequestMapping("edit")
     public Result getById(String id, HttpServletRequest request){
         HashMap<String, Set<TblDicValue>> dicMap =  (HashMap<String, Set<TblDicValue>>)request.getSession().getServletContext().getAttribute("dic");
-        try{
-            TblClue clue = clueService.getById(id);
-            setClueMsg(dicMap, clue);
-            return Result.success(clue);
-        }catch (ResultException e){
-            return Result.fail(e);
-        }
+        TblClue clue = clueService.getById(id);
+        setClueMsg(dicMap, clue);
+        return Result.success(clue);
     }
     @RequestMapping(value = "/update", method = RequestMethod.POST)
     public Result update(@RequestBody TblClue editClue, HttpServletRequest request){
@@ -129,11 +116,7 @@ public class TblClueController {
         TblUser user = (TblUser) request.getSession().getAttribute(USER);
         editClue.setEditby(user.getId());
         //修改
-        try{
-            clueService.update(editClue);
-            return Result.success();
-        }catch (ResultException e){
-            return Result.fail(e);
-        }
+        clueService.update(editClue);
+        return Result.success();
     }
 }

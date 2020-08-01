@@ -7,17 +7,19 @@ import com.example.mapper.TblClueRemarkMapper;
 import com.example.mapper.TblUserMapper;
 import com.example.pojo.*;
 import com.example.service.TblClueRemarkService;
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.example.utils.*;
 import com.example.exception.ResultException;
+import org.springframework.transaction.annotation.Transactional;
 
-import javax.print.DocFlavor;
-import javax.sound.midi.Soundbank;
 import java.util.ArrayList;
 import java.util.List;
 
 @Service
+@Transactional
 public class TblClueRemarkServiceImpl implements TblClueRemarkService {
     @Autowired
     private TblClueRemarkMapper remarkMapper;
@@ -86,26 +88,7 @@ public class TblClueRemarkServiceImpl implements TblClueRemarkService {
         }
     }
 
-    @Override
-    public List<TblActivity> listAct(String data, List<String> ids) {
-        TblActivityExample activityExample = new TblActivityExample();
-        TblActivityExample.Criteria criteria = activityExample.createCriteria();
-        if(data != null && !"".equals(data)){
-            criteria.andNameLike("%"+data+"%");
-        }
-        if(ids.size() != 0){
-            criteria.andIdNotIn(ids);
-        }
-        try{
-            List<TblActivity> activities = activityMapper.selectByExample(activityExample);
-            for(TblActivity activity : activities){
-                activity.setOwnername(userMapper.selectByPrimaryKey(activity.getOwner()).getName());
-            }
-            return activities;
-        }catch (Exception e){
-            throw new ResultException(ResultEnum.FAIL);
-        }
-    }
+
 
     @Override
     public void addRelation(List<String> acts, String clueId) {
@@ -155,5 +138,33 @@ public class TblClueRemarkServiceImpl implements TblClueRemarkService {
         }catch (Exception e){
             throw new ResultException(ResultEnum.FAIL);
         }
+    }
+
+    @Override
+    public PageResult listActsBySearch(int start, int count, String id, String search) {
+        //根据clue的id查询关联表
+        TblClueActivityRelationExample relationExample = new TblClueActivityRelationExample();
+
+        relationExample.createCriteria().andClueidEqualTo(id);
+        List<TblClueActivityRelation> relations = relationMapper.selectByExample(relationExample);
+        //根据关联中的activity的id查询activity
+        List<String> ids = new ArrayList<>();
+        for (TblClueActivityRelation relation : relations) {
+            ids.add(relation.getActivityid());
+        }
+        TblActivityExample activityExample = new TblActivityExample();
+        TblActivityExample.Criteria activityCriteria = activityExample.createCriteria();
+        activityCriteria.andIdIn(ids);
+        if(search != null && !"".equals(search)){
+            activityCriteria.andNameLike("%"+search+"%");
+        }
+        PageHelper.startPage(start, count);
+        List<TblActivity> activities = activityMapper.selectByExample(activityExample);
+        PageInfo pageInfo = new PageInfo(activities);
+        List<TblActivity> list = pageInfo.getList();
+        for(TblActivity activity: list){
+            activity.setOwner(userMapper.selectByPrimaryKey(activity.getOwner()).getName());
+        }
+        return new PageResult(pageInfo.getTotal(), pageInfo.getList());
     }
 }

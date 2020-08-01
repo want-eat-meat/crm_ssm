@@ -23,12 +23,8 @@ public class TblActivityController {
 
     @RequestMapping("listUser")
     public Result getUserList(){
-        try{
-            List<TblUser> users = activityService.getUserList();
-            return Result.success(users);
-        }catch (ResultException e){
-            return Result.fail(e);
-        }
+        List<TblUser> users = activityService.getUserList();
+        return Result.success(users);
     }
 
     @RequestMapping(value = "add", method = RequestMethod.POST)
@@ -37,12 +33,8 @@ public class TblActivityController {
         TblUser user = (TblUser)request.getSession().getAttribute(USER);
         activity.setCreateby(user.getId());
         //调用service
-        try{
-            activityService.add(activity);
-            return Result.success();
-        }catch (ResultException e){
-            return Result.fail(e);
-        }
+        activityService.add(activity);
+        return Result.success();
     }
 
     @RequestMapping(value = "list", method = RequestMethod.POST)
@@ -52,42 +44,26 @@ public class TblActivityController {
                        @RequestParam(value = "endDate", required = false)String endDate,
                        @RequestParam(value = "start", required = true, defaultValue = "1")int start,
                        @RequestParam(value = "count", required = true, defaultValue = "5") int count) {
-        try{
-            PageResult pageResult = activityService.list(name, owner, startDate, endDate, start, count);
-            return Result.success(pageResult);
-        }catch (ResultException e){
-            return Result.fail(e);
-        }
+        PageResult pageResult = activityService.list(name, owner, startDate, endDate, start, count);
+        return Result.success(pageResult);
     }
 
     @RequestMapping(value = "delete", method = RequestMethod.POST)
     public Result delete(@RequestBody List<String> data){
-        try{
-            activityService.delete(data);
-            return Result.success();
-        }catch (ResultException e){
-            return Result.fail(e);
-        }
+        activityService.delete(data);
+        return Result.success();
     }
     @RequestMapping(value = "edit", method = RequestMethod.POST)
     public Result edit(String id){
-        try{
-            TblActivity activity = activityService.getById(id);
-            return Result.success(activity);
-        }catch (ResultException e){
-            return Result.fail(e);
-        }
+        TblActivity activity = activityService.getById(id);
+        return Result.success(activity);
     }
 
     @RequestMapping(value = "update", method = RequestMethod.POST)
     public Result update(@RequestBody TblActivity checkAct, HttpServletRequest request){
         TblUser user = (TblUser) request.getSession().getAttribute(USER);
         checkAct.setEditby(user.getId());
-        try{
-            activityService.update(checkAct);
-            return Result.success();
-        }catch (ResultException e){
-            return Result.fail(e);
-        }
+        activityService.update(checkAct);
+        return Result.success();
     }
 }

@@ -1,8 +1,10 @@
 package com.example.service;
 
+import com.example.pojo.TblDicValue;
+
 import java.util.HashMap;
-import java.util.TreeMap;
+import java.util.Set;
 
 public interface TblDicService {
-    HashMap<String, TreeMap<String, String>> getDics();
+    HashMap<String, Set<TblDicValue>> getDics();
 }

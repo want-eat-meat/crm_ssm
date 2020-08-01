@@ -27,12 +27,8 @@ public class TblCustomerController {
 
     @RequestMapping("listUsers")
     public Result listUsers(){
-        try{
-            List<TblUser> users = userService.listAll();
-            return Result.success(users);
-        }catch (ResultException e){
-            return Result.fail(e);
-        }
+        List<TblUser> users = userService.listAll();
+        return Result.success(users);
     }
     @RequestMapping(value = "add", method = RequestMethod.POST)
     public Result add(@RequestBody TblCustomer addCustomer, HttpServletRequest request){
@@ -40,12 +36,8 @@ public class TblCustomerController {
         TblUser user = (TblUser)request.getSession().getAttribute(USER);
         addCustomer.setCreateby(user.getId());
         //添加
-        try{
-            customerService.add(addCustomer);
-            return Result.success();
-        }catch (ResultException e){
-            return Result.fail(e);
-        }
+        customerService.add(addCustomer);
+        return Result.success();
     }
 
     @RequestMapping("list")
@@ -57,30 +49,19 @@ public class TblCustomerController {
             @RequestParam(value = "phone",required = false) String phone,
             @RequestParam(value = "website",required = false) String website
     ){
-        try{
-            PageResult pageResult = customerService.list(start, count, name, owner, phone, website);
-            return Result.success(pageResult);
-        }catch (ResultException e){
-            return Result.fail(e);
-        }
+        PageResult pageResult = customerService.list(start, count, name, owner, phone, website);
+        return Result.success(pageResult);
     }
+
     @RequestMapping(value = "delete", method = RequestMethod.POST)
     public Result delete(@RequestBody List<String> ids){
-        try{
-            customerService.delete(ids);
-            return Result.success(ids);
-        }catch (ResultException e){
-            return Result.fail(e);
-        }
+        customerService.delete(ids);
+        return Result.success(ids);
     }
     @RequestMapping("edit")
     public Result getCustomerById(String id){
-        try{
-            TblCustomer customer = customerService.getById(id);
-            return Result.success(customer);
-        }catch (ResultException e){
-            return Result.fail(e);
-        }
+        TblCustomer customer = customerService.getById(id);
+        return Result.success(customer);
     }
     @RequestMapping("update")
     public Result update(@RequestBody TblCustomer editCustomer, HttpServletRequest request){
@@ -88,11 +69,7 @@ public class TblCustomerController {
         TblUser user = (TblUser) request.getSession().getAttribute(USER);
         editCustomer.setEditby(user.getId());
         //修改
-        try{
-            customerService.update(editCustomer);
-            return Result.success();
-        }catch (ResultException e){
-            return Result.fail(e);
-        }
+        customerService.update(editCustomer);
+        return Result.success();
     }
 }

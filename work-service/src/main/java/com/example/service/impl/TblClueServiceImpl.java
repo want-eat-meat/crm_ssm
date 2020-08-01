@@ -3,12 +3,10 @@ package com.example.service.impl;
 import com.example.enums.ResultEnum;
 import com.example.exception.ResultException;
 import com.example.mapper.TblClueMapper;
+import com.example.mapper.TblClueRemarkMapper;
 import com.example.mapper.TblDicValueMapper;
 import com.example.mapper.TblUserMapper;
-import com.example.pojo.TblClue;
-import com.example.pojo.TblClueExample;
-import com.example.pojo.TblUser;
-import com.example.pojo.TblUserExample;
+import com.example.pojo.*;
 import com.example.service.TblClueService;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
@@ -28,7 +26,7 @@ public class TblClueServiceImpl implements TblClueService {
     @Autowired
     private TblUserMapper userMapper;
     @Autowired
-    private TblDicValueMapper dicMapper;
+    private TblClueRemarkMapper remarkMapper;
 
     @Override
     public List<TblUser> listUsers() {
@@ -111,9 +109,14 @@ public class TblClueServiceImpl implements TblClueService {
 
     @Override
     public void delete(List<String> ids) {
+        TblClueExample example = new TblClueExample();
+        example.createCriteria().andIdIn(ids);
+        TblClueRemarkExample remarkExample = new TblClueRemarkExample();
+        remarkExample.createCriteria().andClueidIn(ids);
         try{
-            TblClueExample example = new TblClueExample();
-            example.createCriteria().andIdIn(ids);
+            //删除备注
+            remarkMapper.deleteByExample(remarkExample);
+            //删除线索
             clueMapper.deleteByExample(example);
         }catch (Exception e){
             throw new ResultException(ResultEnum.FAIL);

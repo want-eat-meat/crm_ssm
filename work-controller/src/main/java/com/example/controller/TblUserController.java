@@ -24,15 +24,10 @@ public class TblUserController {
 
     @RequestMapping("login")
     public Result login(String loginAct, String loginPwd, HttpServletRequest request){
-        try{
-            TblUser user = userService.login(loginAct, MD5Util.getMD5(loginPwd), request.getRemoteAddr());
-            //存放到Session中
-            request.getSession().setAttribute(USER, user);
-            return Result.success();
-        }
-        catch (ResultException e){
-            return Result.fail(1004, e);
-        }
+        TblUser user = userService.login(loginAct, MD5Util.getMD5(loginPwd), request.getRemoteAddr());
+        //存放到Session中
+        request.getSession().setAttribute(USER, user);
+        return Result.success();
     }
 
     @RequestMapping("getBySession")
@@ -49,15 +44,11 @@ public class TblUserController {
 
     @RequestMapping("changePwd")
     public Result changePwd( String id, String oldPwd, String newPwd, HttpServletRequest request){
-        try{
-            userService.updatePwd(id, MD5Util.getMD5(oldPwd), MD5Util.getMD5(newPwd));
-            //关系Session中的值
-            TblUser user = (TblUser) request.getSession().getAttribute(USER);
-            user.setLoginpwd(MD5Util.getMD5(newPwd));
-            request.getSession().setAttribute(USER, user);
-            return Result.success(user);
-        }catch (ResultException e){
-            return Result.fail(1005, e);
-        }
+        userService.updatePwd(id, MD5Util.getMD5(oldPwd), MD5Util.getMD5(newPwd));
+        //关系Session中的值
+        TblUser user = (TblUser) request.getSession().getAttribute(USER);
+        user.setLoginpwd(MD5Util.getMD5(newPwd));
+        request.getSession().setAttribute(USER, user);
+        return Result.success(user);
     }
 }

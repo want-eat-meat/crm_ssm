@@ -144,4 +144,25 @@ public class TblActivityServiceImpl implements TblActivityService {
             activity.setEditname(userMapper.selectByPrimaryKey(activity.getEditby()).getName());
         }
     }
+
+    @Override
+    public List<TblActivity> listAct(String data, List<String> ids) {
+        TblActivityExample activityExample = new TblActivityExample();
+        TblActivityExample.Criteria criteria = activityExample.createCriteria();
+        if(data != null && !"".equals(data)){
+            criteria.andNameLike("%"+data+"%");
+        }
+        if(ids.size() != 0){
+            criteria.andIdNotIn(ids);
+        }
+        try{
+            List<TblActivity> activities = activityMapper.selectByExample(activityExample);
+            for(TblActivity activity : activities){
+                activity.setOwnername(userMapper.selectByPrimaryKey(activity.getOwner()).getName());
+            }
+            return activities;
+        }catch (Exception e){
+            throw new ResultException(ResultEnum.FAIL);
+        }
+    }
 }

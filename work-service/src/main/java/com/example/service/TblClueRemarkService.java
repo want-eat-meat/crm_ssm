@@ -2,6 +2,7 @@ package com.example.service;
 
 import com.example.pojo.TblActivity;
 import com.example.pojo.TblClueRemark;
+import com.example.utils.PageResult;
 
 import java.util.List;
 
@@ -19,7 +20,7 @@ public interface TblClueRemarkService {
 
     List<TblActivity> listRelations(String id);
 
-    List<TblActivity> listAct(String data, List<String> ids);
-
     void deleteRelation(String actId, String clueId);
+
+    PageResult listActsBySearch(int start, int count, String id, String search);
 }

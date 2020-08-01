@@ -15,4 +15,6 @@ public interface TblCustomerService {
     TblCustomer getById(String id);
 
     void update(TblCustomer customer);
+
+    List<TblCustomer> list(String name);
 }

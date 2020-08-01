@@ -11,10 +11,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.example.mapper.TblActivityRemarkMapper;
 import com.example.utils.*;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
+@Transactional
 public class TblActivityRemarkServiceImpl implements TblActivityRemarkService {
     @Autowired
     TblActivityRemarkMapper activityRemarkMapper;

@@ -3,27 +3,29 @@ package com.example.service.impl;
 import com.example.enums.ResultEnum;
 import com.example.exception.ResultException;
 import com.example.mapper.TblCustomerMapper;
+import com.example.mapper.TblCustomerRemarkMapper;
 import com.example.mapper.TblUserMapper;
-import com.example.pojo.TblCustomer;
-import com.example.pojo.TblCustomerExample;
-import com.example.pojo.TblUser;
-import com.example.pojo.TblUserExample;
+import com.example.pojo.*;
 import com.example.service.TblCustomerService;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.example.utils.*;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Service
+@Transactional
 public class TblCustomerServiceImpl implements TblCustomerService {
     @Autowired
     private TblCustomerMapper customerMapper;
     @Autowired
     private TblUserMapper userMapper;
+    @Autowired
+    private TblCustomerRemarkMapper remarkMapper;
 
     @Override
     public void add(TblCustomer customer) {
@@ -31,6 +33,13 @@ public class TblCustomerServiceImpl implements TblCustomerService {
         customer.setId(UUIDUtil.getUUID());
         //添加创建时间
         customer.setCreatetime(DateTimeUtil.getSysTime());
+        //判断是否存在
+        List<TblCustomer> customers = customerMapper.selectByExample(null);
+        for(TblCustomer obj : customers){
+            if(obj.getName().equals(customer.getName())){
+                throw new ResultException("客户已存在");
+            }
+        }
         //添加
         try{
             customerMapper.insertSelective(customer);
@@ -83,7 +92,12 @@ public class TblCustomerServiceImpl implements TblCustomerService {
     public void delete(List<String> ids) {
         TblCustomerExample customerExample = new TblCustomerExample();
         customerExample.createCriteria().andIdIn(ids);
+        TblCustomerRemarkExample remarkExample = new TblCustomerRemarkExample();
+        remarkExample.createCriteria().andCustomeridIn(ids);
         try{
+            //删除备注
+            remarkMapper.deleteByExample(remarkExample);
+            //删除客户
             customerMapper.deleteByExample(customerExample);
         }catch (Exception e){
             throw new ResultException(ResultEnum.FAIL);
@@ -116,5 +130,18 @@ public class TblCustomerServiceImpl implements TblCustomerService {
         }catch (Exception e){
             throw new ResultException(ResultEnum.FAIL);
         }
+    }
+
+    @Override
+    public List<TblCustomer> list(String name) {
+        TblCustomerExample customerExample = new TblCustomerExample();
+        if(name != null && !"".equals(name)) {
+            customerExample.createCriteria().andNameLike("%" + name + "%");
+        }
+        List<TblCustomer> customers = customerMapper.selectByExample(customerExample);
+        if(customers.size() == 0){
+            throw new ResultException(ResultEnum.SUCCESS_NODATA);
+        }
+        return customers;
     }
 }

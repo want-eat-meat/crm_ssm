@@ -2,15 +2,16 @@
 <html>
 <head>
 <meta charset="UTF-8">
-
-<link href="../../jquery/bootstrap_3.3.0/css/bootstrap.min.css" type="text/css" rel="stylesheet" />
-<script type="text/javascript" src="../../jquery/jquery-1.11.1-min.js"></script>
-<script type="text/javascript" src="../../jquery/bootstrap_3.3.0/js/bootstrap.min.js"></script>
-<link href="/jquery/bootstrap-datetimepicker-master/css/bootstrap-datetimepicker.min.css" type="text/css" rel="stylesheet" />
-<script type="text/javascript" src="/jquery/bootstrap-datetimepicker-master/js/bootstrap-datetimepicker.js"></script>
-<script type="text/javascript" src="/jquery/bootstrap-datetimepicker-master/locale/bootstrap-datetimepicker.zh-CN.js"></script>
-<script src="../../jquery/vue.min.js"></script>
-<script src="../../jquery/axios.min.js"></script>
+	<link href="/jquery/bootstrap_3.3.0/css/bootstrap.min.css" type="text/css" rel="stylesheet" />
+	<link href="/jquery/bootstrap-datetimepicker-master/css/bootstrap-datetimepicker.min.css" type="text/css" rel="stylesheet" />
+	<link href="/jquery/bs_pagination/jquery.bs_pagination.min.css"/>
+	<script type="text/javascript" src="/jquery/jquery-1.11.1-min.js"></script>
+	<script type="text/javascript" src="/jquery/bootstrap_3.3.0/js/bootstrap.min.js"></script>
+	<script type="text/javascript" src="/jquery/bootstrap-datetimepicker-master/js/bootstrap-datetimepicker.js"></script>
+	<script type="text/javascript" src="/jquery/bs_pagination/jquery.bs_pagination.min.js"></script>
+	<script type="text/javascript" src="/jquery/bs_pagination/en.js"></script>
+	<script type="text/javascript" src="../../jquery/vue.min.js"></script>
+	<script type="text/javascript" src="../../jquery/axios.min.js"></script>
 </head>
 <body>
 <script type="text/javascript">
@@ -19,10 +20,26 @@
 		var vue = new Vue({
 			el : "#work_area",
 			data : {
+				//返回结果
+				result : {},
 				//线索对象信息
-				clue : {}
+				clue : {},
+				//阶段信息
+				stages : [],
+				//搜索市场活动
+				activityName : "",
+				//分页结果
+				pageResult : {},
+				//分页信息
+				pageInfo : {
+					start : 1,
+					count : 5
+				},
+				//搜索市场活动框显示
+				activity : {},
 			},
 			methods : {
+				//获取线索
 				getClue : function () {
 					var url = "/clue/edit";
 					var data = "id=" + id;
@@ -40,14 +57,82 @@
 				createTran : function () {
 					if($("#isCreateTransaction").prop("checked")){
 						$("#create-transaction2").show(200);
+						this.showStage();
 					}else{
 						$("#create-transaction2").hide(200);
 					}
+				},
+				//获取阶段信息
+				showStage : function () {
+					var uri = "/clueRemark/getStage";
+					var self = this;
+					axios.get(uri).then(function (value) {
+						self.result = value.data;
+						if(self.result.status == 200){
+							self.stages = self.result.data;
+						}else{
+							alert(self.result.msg);
+						}
+					})
+				},
+				//获取已关联的市场活动
+				addAct : function (start, count) {
+					var uri = "/clueRemark/listActsBySearch";
+					var data = "start=" + start +
+							"&count=" + count +
+							"&id=" + id +
+							"&search=" + this.activityName;
+					var self = this;
+					axios.post(uri, data).then(function (value) {
+						self.result = value.data;
+						if(self.result.status == 200){
+							self.pageResult = self.result.data;
+							$("#searchActivityModal").modal("show");
+							var total = self.pageResult.total;
+							var totalPage = total % count == 0 ? total / count : parseInt(total / count) + 1;
+							$("#activityPage").bs_pagination({
+								currentPage: start,
+								rowsPerPage: count,
+								maxRowsPerPage: 20,
+								totalPages: totalPage,
+								totalRows: total,
+								visiblePageLinks: 3,
+								showRowsPerPage: true,
+								showGoToPage: true,
+								showRowsInfo: true,
+								showRowsDefaultInfo: false,
+								onChangePage: function (event, obj) {
+									self.pageInfo.start = obj.currentPage;
+									self.pageInfo.count = obj.rowsPerPage;
+									self.addAct(obj.currentPage, obj.rowsPerPage);
+								}
+							});
+						}else{
+							alert(self.result.msg);
+						}
+					})
+				},
+				//点击添加
+				showAct : function(){
+					if($(":radio[name=activity]:checked").size() == 0){
+						alert("请选择市场活动");
+						return
+					}
+					var index = $(":radio[name=activity]:checked").val();
+					this.activity = this.pageResult.rows[index];
+					$("#searchActivityModal").modal("hide");
 				}
-
 			},
 			mounted : function () {
 				this.getClue();
+				$(".time").datetimepicker({
+					minView: "month",
+					language: "zh-CN",
+					format: "yyyy-mm-dd",
+					autoclose: true,
+					todayBtn: true,
+					pickerPosition: "bottom-left"
+				});
 			}
 		})
 	});
@@ -67,7 +152,7 @@
 					<div class="btn-group" style="position: relative; top: 18%; left: 8px;">
 						<form class="form-inline" role="form">
 						  <div class="form-group has-feedback">
-						    <input type="text" class="form-control" style="width: 300px;" placeholder="请输入市场活动名称，支持模糊查询">
+						    <input type="text" class="form-control" style="width: 300px;" placeholder="请输入市场活动名称，支持模糊查询" v-model="activityName" @blur="addAct(pageInfo.start, pageInfo.count)">
 						    <span class="glyphicon glyphicon-search form-control-feedback"></span>
 						  </div>
 						</form>
@@ -84,22 +169,20 @@
 							</tr>
 						</thead>
 						<tbody>
-							<tr>
-								<td><input type="radio" name="activity"/></td>
-								<td>发传单</td>
-								<td>2020-10-10</td>
-								<td>2020-10-20</td>
-								<td>zhangsan</td>
-							</tr>
-							<tr>
-								<td><input type="radio" name="activity"/></td>
-								<td>发传单</td>
-								<td>2020-10-10</td>
-								<td>2020-10-20</td>
-								<td>zhangsan</td>
+							<tr v-for="(activity, index) in pageResult.rows">
+								<td><input type="radio" name="activity" :value="index"/></td>
+								<td>{{activity.name}}</td>
+								<td>{{activity.startdate}}</td>
+								<td>{{activity.enddate}}</td>
+								<td>{{activity.owner}}</td>
 							</tr>
 						</tbody>
 					</table>
+					<div id="activityPage"></div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+					<button type="button" class="btn btn-primary" @click="showAct()">添加</button>
 				</div>
 			</div>
 		</div>
@@ -115,7 +198,7 @@
 		新建联系人：{{clue.fullname}}
 	</div>
 	<div id="create-transaction1" style="position: relative; left: 40px; height: 35px; top: 25px;">
-		<input type="checkbox" id="isCreateTransaction" @click="createTran()"/>
+		<input type="checkbox" id="isCreateTransaction" @click="createTran()" />
 		为客户创建交易
 	</div>
 	<div id="create-transaction2" style="position: relative; left: 40px; top: 20px; width: 80%; background-color: #F7F7F7; display: none;" >
@@ -131,26 +214,17 @@
 		  </div>
 		  <div class="form-group" style="width: 400px;position: relative; left: 20px;">
 		    <label for="expectedClosingDate">预计成交日期</label>
-		    <input type="text" class="form-control" id="expectedClosingDate">
+		    <input type="text" class="form-control time" id="expectedClosingDate">
 		  </div>
 		  <div class="form-group" style="width: 400px;position: relative; left: 20px;">
 		    <label for="stage">阶段</label>
-		    <select id="stage"  class="form-control">
-		    	<option></option>
-		    	<option>资质审查</option>
-		    	<option>需求分析</option>
-		    	<option>价值建议</option>
-		    	<option>确定决策者</option>
-		    	<option>提案/报价</option>
-		    	<option>谈判/复审</option>
-		    	<option>成交</option>
-		    	<option>丢失的线索</option>
-		    	<option>因竞争丢失关闭</option>
+		    <select id="stage"  class="form-control" >
+		    	<option v-for="stage in stages" :value="stage.id">{{stage.text}}</option>
 		    </select>
 		  </div>
 		  <div class="form-group" style="width: 400px;position: relative; left: 20px;">
-		    <label for="activity">市场活动源&nbsp;&nbsp;<a href="javascript:void(0);" data-toggle="modal" data-target="#searchActivityModal" style="text-decoration: none;"><span class="glyphicon glyphicon-search"></span></a></label>
-		    <input type="text" class="form-control" id="activity" placeholder="点击上面搜索" readonly>
+		    <label for="activity">市场活动源&nbsp;&nbsp;<a href="javascript:void(0);" @click="addAct(pageInfo.start, pageInfo.count)" style="text-decoration: none;"><span class="glyphicon glyphicon-search"></span></a></label>
+		    <input type="text" class="form-control" id="activity" placeholder="点击上面搜索" v-model="activity.name" readonly >
 		  </div>
 		</form>
 		
@@ -165,6 +239,6 @@
 		&nbsp;&nbsp;&nbsp;&nbsp;
 		<input class="btn btn-default" type="button" value="取消" onclick="window.history.back()">
 	</div>
-</body>
 </div>
+</body>
 </html>
