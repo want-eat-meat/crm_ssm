@@ -103,4 +103,19 @@ public class TblClueRemarkController {
         PageResult pageResult = clueRemarkService.listActsBySearch(start, count, id, search);
         return Result.success(pageResult);
     }
+    @RequestMapping("convert")
+    public Result convert(String clueid,
+                          @RequestParam(value = "money", required = false) String money,
+                          @RequestParam(value = "convertname", required = false) String convertname,
+                          @RequestParam(value = "expdate", required = false) String expdate,
+                          @RequestParam(value = "stage", required = false) String stage,
+                          @RequestParam(value = "actid", required = false) String actid,
+                          String createflag,
+                          HttpServletRequest request
+    ){
+        //获取创建者id
+        TblUser user = (TblUser) request.getSession().getAttribute(USER);
+        clueRemarkService.convert(clueid, money, convertname, expdate, stage, actid, createflag, user.getId());
+        return Result.success();
+    }
 }

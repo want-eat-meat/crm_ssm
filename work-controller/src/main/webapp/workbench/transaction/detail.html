@@ -2,9 +2,16 @@
 <html>
 <head>
 <meta charset="UTF-8">
-
-<link href="../../jquery/bootstrap_3.3.0/css/bootstrap.min.css" type="text/css" rel="stylesheet" />
-
+	<link href="/jquery/bootstrap_3.3.0/css/bootstrap.min.css" type="text/css" rel="stylesheet" />
+	<link href="/jquery/bootstrap-datetimepicker-master/css/bootstrap-datetimepicker.min.css" type="text/css" rel="stylesheet" />
+	<link href="/jquery/bs_pagination/jquery.bs_pagination.min.css"/>
+	<script type="text/javascript" src="/jquery/jquery-1.11.1-min.js"></script>
+	<script type="text/javascript" src="/jquery/bootstrap_3.3.0/js/bootstrap.min.js"></script>
+	<script type="text/javascript" src="/jquery/bootstrap-datetimepicker-master/js/bootstrap-datetimepicker.js"></script>
+	<script type="text/javascript" src="/jquery/bs_pagination/jquery.bs_pagination.min.js"></script>
+	<script type="text/javascript" src="/jquery/bs_pagination/en.js"></script>
+	<script type="text/javascript" src="../../jquery/vue.min.js"></script>
+	<script type="text/javascript" src="../../jquery/axios.min.js"></script>
 <style type="text/css">
 .mystage{
 	font-size: 20px;
@@ -17,15 +24,14 @@
 	vertical-align: middle;
 }
 </style>
-	
-<script type="text/javascript" src="../../jquery/jquery-1.11.1-min.js"></script>
-<script type="text/javascript" src="../../jquery/bootstrap_3.3.0/js/bootstrap.min.js"></script>
+</head>
 
+<body>
 <script type="text/javascript">
 
 	//默认情况下取消和保存按钮是隐藏的
 	var cancelAndSaveBtnDefault = true;
-	
+
 	$(function(){
 		$("#remark").focus(function(){
 			if(cancelAndSaveBtnDefault){
@@ -36,7 +42,7 @@
 				cancelAndSaveBtnDefault = false;
 			}
 		});
-		
+
 		$("#cancelBtn").click(function(){
 			//显示
 			$("#cancelAndSaveBtn").hide();
@@ -44,50 +50,47 @@
 			$("#remarkDiv").css("height","90px");
 			cancelAndSaveBtnDefault = true;
 		});
-		
+
 		$(".remarkDiv").mouseover(function(){
 			$(this).children("div").children("div").show();
 		});
-		
+
 		$(".remarkDiv").mouseout(function(){
 			$(this).children("div").children("div").hide();
 		});
-		
+
 		$(".myHref").mouseover(function(){
 			$(this).children("span").css("color","red");
 		});
-		
+
 		$(".myHref").mouseout(function(){
 			$(this).children("span").css("color","#E6E6E6");
 		});
-		
-		
+
+
 		//阶段提示框
 		$(".mystage").popover({
-            trigger:'manual',
-            placement : 'bottom',
-            html: 'true',
-            animation: false
-        }).on("mouseenter", function () {
-                    var _this = this;
-                    $(this).popover("show");
-                    $(this).siblings(".popover").on("mouseleave", function () {
-                        $(_this).popover('hide');
-                    });
-                }).on("mouseleave", function () {
-                    var _this = this;
-                    setTimeout(function () {
-                        if (!$(".popover:hover").length) {
-                            $(_this).popover("hide")
-                        }
-                    }, 100);
-                });
+			trigger:'manual',
+			placement : 'bottom',
+			html: 'true',
+			animation: false
+		}).on("mouseenter", function () {
+			var _this = this;
+			$(this).popover("show");
+			$(this).siblings(".popover").on("mouseleave", function () {
+				$(_this).popover('hide');
+			});
+		}).on("mouseleave", function () {
+			var _this = this;
+			setTimeout(function () {
+				if (!$(".popover:hover").length) {
+					$(_this).popover("hide")
+				}
+			}, 100);
+		});
 	});
 </script>
-
-</head>
-<body>
-	
+<div id="work_area">
 	<!-- 返回按钮 -->
 	<div style="position: relative; top: 35px; left: 10px;">
 		<a href="javascript:void(0);" onclick="window.history.back();"><span class="glyphicon glyphicon-arrow-left" style="font-size: 20px; color: #DDDDDD"></span></a>
@@ -306,6 +309,6 @@
 	</div>
 	
 	<div style="height: 200px;"></div>
-	
+</div>
 </body>
 </html>

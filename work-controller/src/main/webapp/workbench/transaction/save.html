@@ -30,6 +30,12 @@
 				transactionTypes : [],
 				//来源
 				sources : [],
+				//联系人
+				tran : {},
+				//搜索联系人
+				searchCtm : "",
+				//联系人集合
+
 			},
 			methods : {
 				//查询初始化信息
@@ -45,11 +51,24 @@
 							self.sources = self.result.data.sources;
 						}
 					})
+				},
+				//动态查询联系人
+				listCtm : function () {
+					var uri = url + "/listCustomer";
+					var data = "limit=" + this.searchCtm;
 				}
 			},
 
 			mounted : function () {
 				this.listMsg();
+				$(".time").datetimepicker({
+					minView: "month",
+					language: "zh-CN",
+					format: "yyyy-mm-dd",
+					autoclose: true,
+					todayBtn: true,
+					pickerPosition: "top-left"
+				});
 			}
 		})
 	});
@@ -168,13 +187,13 @@
 		<div class="form-group">
 			<label for="create-transactionOwner" class="col-sm-2 control-label">所有者<span style="font-size: 15px; color: red;">*</span></label>
 			<div class="col-sm-10" style="width: 300px;">
-				<select class="form-control" id="create-transactionOwner">
+				<select class="form-control" id="create-transactionOwner" v-model="tran.owner">
 				  <option v-for="user in users" :value="user.id">{{user.name}}</option>
 				</select>
 			</div>
 			<label for="create-amountOfMoney" class="col-sm-2 control-label">金额</label>
 			<div class="col-sm-10" style="width: 300px;">
-				<input type="text" class="form-control" id="create-amountOfMoney">
+				<input type="text" class="form-control" id="create-amountOfMoney" v-model="tran.money">
 			</div>
 		</div>
 		
@@ -185,18 +204,21 @@
 			</div>
 			<label for="create-expectedClosingDate" class="col-sm-2 control-label">预计成交日期<span style="font-size: 15px; color: red;">*</span></label>
 			<div class="col-sm-10" style="width: 300px;">
-				<input type="text" class="form-control" id="create-expectedClosingDate">
+				<input type="text" class="form-control time" id="create-expectedClosingDate">
 			</div>
 		</div>
 		
 		<div class="form-group">
 			<label for="create-accountName" class="col-sm-2 control-label">客户名称<span style="font-size: 15px; color: red;">*</span></label>
 			<div class="col-sm-10" style="width: 300px;">
-				<input type="text" class="form-control" id="create-accountName" placeholder="支持自动补全，输入客户不存在则新建">
+				<input type="text" class="form-control" id="create-accountName" @input="listCtm()" placeholder="支持自动补全，输入客户不存在则新建" v-model="searchCtm" list="ctmList">
+				<datalist id="ctmList">
+					<option></option>
+				</datalist>
 			</div>
 			<label for="create-transactionStage" class="col-sm-2 control-label">阶段<span style="font-size: 15px; color: red;">*</span></label>
 			<div class="col-sm-10" style="width: 300px;">
-			  <select class="form-control" id="create-transactionStage">
+			  <select class="form-control" id="create-transactionStage" v-model="tran.stage">
 			  	<option></option>
 			  	<option v-for="stage in stages" :value="stage.id">{{stage.text}}</option>
 			  </select>
@@ -206,7 +228,7 @@
 		<div class="form-group">
 			<label for="create-transactionType" class="col-sm-2 control-label">类型</label>
 			<div class="col-sm-10" style="width: 300px;">
-				<select class="form-control" id="create-transactionType">
+				<select class="form-control" id="create-transactionType" v-model="tran.type">
 					<option></option>
 					<option v-for="type in transactionTypes" :value="type.id">{{type.text}}</option>
 				</select>
@@ -220,42 +242,42 @@
 		<div class="form-group">
 			<label for="create-clueSource" class="col-sm-2 control-label">来源</label>
 			<div class="col-sm-10" style="width: 300px;">
-				<select class="form-control" id="create-clueSource">
+				<select class="form-control" id="create-clueSource" v-model="tran.source">
 				  <option></option>
 				  <option v-for="source in sources" :value="source.id">{{source.text}}</option>
 				</select>
 			</div>
 			<label for="create-activitySrc" class="col-sm-2 control-label">市场活动源&nbsp;&nbsp;<a href="javascript:void(0);" data-toggle="modal" data-target="#findMarketActivity"><span class="glyphicon glyphicon-search"></span></a></label>
 			<div class="col-sm-10" style="width: 300px;">
-				<input type="text" class="form-control" id="create-activitySrc">
+				<input type="text" class="form-control" id="create-activitySrc" readonly>
 			</div>
 		</div>
 		
 		<div class="form-group">
 			<label for="create-contactsName" class="col-sm-2 control-label">联系人名称&nbsp;&nbsp;<a href="javascript:void(0);" data-toggle="modal" data-target="#findContacts"><span class="glyphicon glyphicon-search"></span></a></label>
 			<div class="col-sm-10" style="width: 300px;">
-				<input type="text" class="form-control" id="create-contactsName">
+				<input type="text" class="form-control" id="create-contactsName" readonly>
 			</div>
 		</div>
 		
 		<div class="form-group">
 			<label for="create-describe" class="col-sm-2 control-label">描述</label>
 			<div class="col-sm-10" style="width: 70%;">
-				<textarea class="form-control" rows="3" id="create-describe"></textarea>
+				<textarea class="form-control" rows="3" id="create-describe" v-model="tran.description"></textarea>
 			</div>
 		</div>
 		
 		<div class="form-group">
 			<label for="create-contactSummary" class="col-sm-2 control-label">联系纪要</label>
 			<div class="col-sm-10" style="width: 70%;">
-				<textarea class="form-control" rows="3" id="create-contactSummary"></textarea>
+				<textarea class="form-control" rows="3" id="create-contactSummary" v-model="tran.contactsummary"></textarea>
 			</div>
 		</div>
 		
 		<div class="form-group">
 			<label for="create-nextContactTime" class="col-sm-2 control-label">下次联系时间</label>
 			<div class="col-sm-10" style="width: 300px;">
-				<input type="text" class="form-control" id="create-nextContactTime">
+				<input type="text" class="form-control" id="create-nextContactTime" v-model="tran.nextcontacttime">
 			</div>
 		</div>
 	</form>

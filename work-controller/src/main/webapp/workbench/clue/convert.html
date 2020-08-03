@@ -36,7 +36,10 @@
 					count : 5
 				},
 				//搜索市场活动框显示
-				activity : {},
+				activity : {
+					id : "",
+				},
+				createFlag : "0"
 			},
 			methods : {
 				//获取线索
@@ -57,9 +60,11 @@
 				createTran : function () {
 					if($("#isCreateTransaction").prop("checked")){
 						$("#create-transaction2").show(200);
+						this.createFlag = "1";
 						this.showStage();
 					}else{
 						$("#create-transaction2").hide(200);
+						this.createFlag = "0";
 					}
 				},
 				//获取阶段信息
@@ -121,6 +126,25 @@
 					var index = $(":radio[name=activity]:checked").val();
 					this.activity = this.pageResult.rows[index];
 					$("#searchActivityModal").modal("hide");
+				},
+				//转换
+				convert : function () {
+					var uri = "/clueRemark/convert";
+					var data = "clueid=" + id +
+							"&money=" + $("#amountOfMoney").val() +
+							"&convertname=" + $("#tradeName").val() +
+							"&expdate=" + $("#expectedClosingDate").val() +
+							"&stage=" + $("#stage").val() +
+							"&actid=" + this.activity.id +
+							"&createflag=" +this.createFlag;
+					axios.post(uri, data).then(function (value) {
+						self.result = value.data;
+						if(self.result.status == 200){
+							window.history.go(-2);
+						}else{
+							alert(self.result.msg)
+						}
+					})
 				}
 			},
 			mounted : function () {
@@ -210,7 +234,7 @@
 		  </div>
 		  <div class="form-group" style="width: 400px;position: relative; left: 20px;">
 		    <label for="tradeName">交易名称</label>
-		    <input type="text" class="form-control" id="tradeName" :value="clue.company+'-'">
+		    <input type="text" class="form-control" id="tradeName" placeholder="交易名称">
 		  </div>
 		  <div class="form-group" style="width: 400px;position: relative; left: 20px;">
 		    <label for="expectedClosingDate">预计成交日期</label>
@@ -235,7 +259,7 @@
 		<b>{{clue.ownername}}</b>
 	</div>
 	<div id="operation" style="position: relative; left: 40px; height: 35px; top: 100px;">
-		<input class="btn btn-primary" type="button" value="转换">
+		<input class="btn btn-primary" type="button" value="转换" @click="convert()">
 		&nbsp;&nbsp;&nbsp;&nbsp;
 		<input class="btn btn-default" type="button" value="取消" onclick="window.history.back()">
 	</div>

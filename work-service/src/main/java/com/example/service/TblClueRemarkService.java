@@ -23,4 +23,6 @@ public interface TblClueRemarkService {
     void deleteRelation(String actId, String clueId);
 
     PageResult listActsBySearch(int start, int count, String id, String search);
+
+    void convert(String clueid, String money, String convertname, String expdate, String stage, String actid, String createflag, String createby);
 }
