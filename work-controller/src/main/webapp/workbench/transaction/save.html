@@ -9,6 +9,7 @@
 	<script type="text/javascript" src="/jquery/bootstrap_3.3.0/js/bootstrap.min.js"></script>
 	<script type="text/javascript" src="/jquery/bootstrap-datetimepicker-master/js/bootstrap-datetimepicker.js"></script>
 	<script type="text/javascript" src="/jquery/bs_pagination/jquery.bs_pagination.min.js"></script>
+	<script type="text/javascript" src="/jquery/bs_typeahead/bootstrap3-typeahead.min.js"></script>
 	<script type="text/javascript" src="/jquery/bs_pagination/en.js"></script>
 	<script type="text/javascript" src="../../jquery/vue.min.js"></script>
 	<script type="text/javascript" src="../../jquery/axios.min.js"></script>
@@ -30,12 +31,37 @@
 				transactionTypes : [],
 				//来源
 				sources : [],
-				//联系人
+				//可能性值
+				possible : "",
+				//交易
 				tran : {},
+				//市场活动分页结果
+				pageAct : {},
+				//搜索市场活动
+				searchAct : "",
+				//市场活动分页信息
+				actInfo : {
+					start : 1,
+					count : 5
+				},
+				//选择市场活动结果
+				activity: {
+					id : "",
+					name : ""
+				},
 				//搜索联系人
-				searchCtm : "",
-				//联系人集合
-
+				searchCt : "",
+				//搜索联系人分页结果
+				pageCt : {},
+				//联系人分页信息
+				ctInfo : {
+					start : 1,
+					count : 5
+				},
+				//选择联系人结果
+				contact : {
+					id : "",
+				}
 			},
 			methods : {
 				//查询初始化信息
@@ -52,10 +78,129 @@
 						}
 					})
 				},
-				//动态查询联系人
-				listCtm : function () {
-					var uri = url + "/listCustomer";
-					var data = "limit=" + this.searchCtm;
+				//状态改变时改变几率
+				changePoss : function () {
+					var uri = url + "/getPoss";
+					var data = "id=" + this.tran.stage;
+					var self = this;
+					axios.post(uri, data).then(function (value) {
+						self.result = value.data;
+						if(self.result.status == 200){
+							self.possible = self.result.data + "%";
+						}else{
+							alert(self.result.msg);
+						}
+					})
+				},
+				//查询市场活动列表
+				listAct : function (start, count) {
+					var uri = url + "/listActivity";
+					var data = "start=" + this.actInfo.start +
+							"&count=" + this.actInfo.count +
+							"&search=" + this.searchAct;
+					var self = this;
+					axios.post(uri, data).then(function (value) {
+						self.result = value.data;
+						if(self.result.status == 200){
+							self.pageAct = self.result.data;
+							$("#findMarketActivity").modal("show");
+							var total = self.pageAct.total;
+							var totalPage = total % count == 0 ? total / count : parseInt(total / count) + 1;
+							$("#activityPage").bs_pagination({
+								currentPage: start,
+								rowsPerPage: count,
+								maxRowsPerPage: 20,
+								totalPages: totalPage,
+								totalRows: total,
+								visiblePageLinks: 3,
+								showRowsPerPage: true,
+								showGoToPage: true,
+								showRowsInfo: true,
+								showRowsDefaultInfo: false,
+								onChangePage: function (event, obj) {
+									self.actInfo.start = obj.currentPage;
+									self.actInfo.count = obj.rowsPerPage;
+									self.listAct(obj.currentPage, obj.rowsPerPage);
+								}
+							});
+						}else{
+							alert(self.result)
+						}
+					})
+				},
+				//选择市场活动
+				showAct : function () {
+					if($(":radio[name=activity]:checked").size() == 0){
+						alert("请选择市场活动");
+						return;
+					}
+					var index = $(":radio[name=activity]:checked").val();
+					this.activity = this.pageAct.rows[index];
+					$("#findMarketActivity").modal("hide");
+				},
+				//查询联系人列表
+				listCt : function (start, count) {
+					var uri = url + "/listContact";
+					var data = "start=" + this.ctInfo.start +
+							"&count=" + this.ctInfo.count +
+							"&search=" + this.searchCt;
+					var self = this;
+					axios.post(uri, data).then(function (value) {
+						self.result = value.data;
+						if(self.result.status == 200){
+							self.pageCt = self.result.data;
+							$("#findContacts").modal("show");
+							var total = self.pageCt.total;
+							var totalPage = total % count == 0 ? total / count : parseInt(total / count) + 1;
+							$("#contactPage").bs_pagination({
+								currentPage: start,
+								rowsPerPage: count,
+								maxRowsPerPage: 20,
+								totalPages: totalPage,
+								totalRows: total,
+								visiblePageLinks: 3,
+								showRowsPerPage: true,
+								showGoToPage: true,
+								showRowsInfo: true,
+								showRowsDefaultInfo: false,
+								onChangePage: function (event, obj) {
+									self.ctInfo.start = obj.currentPage;
+									self.ctInfo.count = obj.rowsPerPage;
+									self.listCt(obj.currentPage, obj.rowsPerPage);
+								}
+							});
+						}else{
+							alert(self.result)
+						}
+					})
+				},
+				showCt : function () {
+					if($(":radio[name=contact]:checked").size() == 0){
+						alert("请选择市场活动");
+						return;
+					}
+					var index = $(":radio[name=contact]:checked").val();
+					this.contact = this.pageCt.rows[index];
+					$("#findContacts").modal("hide");
+				},
+				addTran : function () {
+					this.tran.customerid = $("#create-accountName").val();
+					this.tran.expecteddate = $("#create-expectedClosingDate").val();
+					this.tran.nextcontacttime = $("#create-nextContactTime").val();
+					this.tran.activityid = this.activity.id;
+					this.tran.contactsid = this.contact.id;
+
+					var uri = url + "/addTran";
+					var data = this.tran;
+					axios.post(uri, data).then(function (value) {
+						self.result = value.data;
+						if(self.result.status == 200){
+							alert("添加成功");
+							window.history.back();
+						}else{
+							alert(self.result.msg);
+						}
+					})
 				}
 			},
 
@@ -68,6 +213,22 @@
 					autoclose: true,
 					todayBtn: true,
 					pickerPosition: "top-left"
+				});
+				$(".time-bottom").datetimepicker({
+					minView: "month",
+					language: "zh-CN",
+					format: "yyyy-mm-dd",
+					autoclose: true,
+					todayBtn: true,
+					pickerPosition: "bottom-left"
+				});
+				$("#create-accountName").typeahead({
+					source: function (query, process) {
+						$.get(url + "/listCustomer", { "name" : query}, function (obj) {
+							process(obj.data);
+							}, "json");
+					},
+					delay: 300//单位毫秒
 				});
 			}
 		})
@@ -89,7 +250,7 @@
 					<div class="btn-group" style="position: relative; top: 18%; left: 8px;">
 						<form class="form-inline" role="form">
 						  <div class="form-group has-feedback">
-						    <input type="text" class="form-control" style="width: 300px;" placeholder="请输入市场活动名称，支持模糊查询">
+						    <input type="text" class="form-control" style="width: 300px;" placeholder="请输入市场活动名称，支持模糊查询" v-model="searchAct" @blur="listAct(actInfo.start, actInfo.count)">
 						    <span class="glyphicon glyphicon-search form-control-feedback"></span>
 						  </div>
 						</form>
@@ -105,22 +266,20 @@
 							</tr>
 						</thead>
 						<tbody>
-							<tr>
-								<td><input type="radio" name="activity"/></td>
-								<td>发传单</td>
-								<td>2020-10-10</td>
-								<td>2020-10-20</td>
-								<td>zhangsan</td>
-							</tr>
-							<tr>
-								<td><input type="radio" name="activity"/></td>
-								<td>发传单</td>
-								<td>2020-10-10</td>
-								<td>2020-10-20</td>
-								<td>zhangsan</td>
+							<tr v-for="(activity, index) in pageAct.rows">
+								<td><input type="radio" name="activity" :value="index"/></td>
+								<td>{{activity.name}}</td>
+								<td>{{activity.startdate}}}</td>
+								<td>{{activity.enddate}}</td>
+								<td>{{activity.owner}}</td>
 							</tr>
 						</tbody>
 					</table>
+				</div>
+				<div id="activityPage"></div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+					<button type="button" class="btn btn-primary" @click="showAct()">添加</button>
 				</div>
 			</div>
 		</div>
@@ -140,7 +299,7 @@
 					<div class="btn-group" style="position: relative; top: 18%; left: 8px;">
 						<form class="form-inline" role="form">
 						  <div class="form-group has-feedback">
-						    <input type="text" class="form-control" style="width: 300px;" placeholder="请输入联系人名称，支持模糊查询">
+						    <input type="text" class="form-control" style="width: 300px;" placeholder="请输入联系人名称，支持模糊查询" v-model="searchCt" @blur="listCt(ctInfo.start, ctInfo.count)">
 						    <span class="glyphicon glyphicon-search form-control-feedback"></span>
 						  </div>
 						</form>
@@ -155,20 +314,19 @@
 							</tr>
 						</thead>
 						<tbody>
-							<tr>
-								<td><input type="radio" name="activity"/></td>
-								<td>李四</td>
-								<td>lisi@bjpowernode.com</td>
-								<td>12345678901</td>
-							</tr>
-							<tr>
-								<td><input type="radio" name="activity"/></td>
-								<td>李四</td>
-								<td>lisi@bjpowernode.com</td>
-								<td>12345678901</td>
+							<tr v-for="(contact, index) in pageCt.rows">
+								<td><input type="radio" name="contact" :value="index"/></td>
+								<td>{{contact.fullname}}</td>
+								<td>{{contact.email}}</td>
+								<td>{{contact.mphone}}</td>
 							</tr>
 						</tbody>
 					</table>
+				</div>
+				<div id="contactPage"></div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+					<button type="button" class="btn btn-primary" @click="showCt()">添加</button>
 				</div>
 			</div>
 		</div>
@@ -178,8 +336,8 @@
 	<div style="position:  relative; left: 30px;">
 		<h3>创建交易</h3>
 	  	<div style="position: relative; top: -40px; left: 70%;">
-			<button type="button" class="btn btn-primary">保存</button>
-			<button type="button" class="btn btn-default">取消</button>
+			<button type="button" class="btn btn-primary" @click="addTran()">保存</button>
+			<button type="button" class="btn btn-default" onclick="window.history.back()">取消</button>
 		</div>
 		<hr style="position: relative; top: -40px;">
 	</div>
@@ -200,27 +358,24 @@
 		<div class="form-group">
 			<label for="create-transactionName" class="col-sm-2 control-label">名称<span style="font-size: 15px; color: red;">*</span></label>
 			<div class="col-sm-10" style="width: 300px;">
-				<input type="text" class="form-control" id="create-transactionName">
+				<input type="text" class="form-control" id="create-transactionName" v-model="tran.name">
 			</div>
 			<label for="create-expectedClosingDate" class="col-sm-2 control-label">预计成交日期<span style="font-size: 15px; color: red;">*</span></label>
 			<div class="col-sm-10" style="width: 300px;">
-				<input type="text" class="form-control time" id="create-expectedClosingDate">
+				<input type="text" class="form-control time-bottom" id="create-expectedClosingDate">
 			</div>
 		</div>
 		
 		<div class="form-group">
 			<label for="create-accountName" class="col-sm-2 control-label">客户名称<span style="font-size: 15px; color: red;">*</span></label>
 			<div class="col-sm-10" style="width: 300px;">
-				<input type="text" class="form-control" id="create-accountName" @input="listCtm()" placeholder="支持自动补全，输入客户不存在则新建" v-model="searchCtm" list="ctmList">
-				<datalist id="ctmList">
-					<option></option>
-				</datalist>
+				<input type="text" class="form-control" id="create-accountName" @input="listCtm()" placeholder="支持自动补全，输入客户不存在则新建" >
 			</div>
 			<label for="create-transactionStage" class="col-sm-2 control-label">阶段<span style="font-size: 15px; color: red;">*</span></label>
 			<div class="col-sm-10" style="width: 300px;">
-			  <select class="form-control" id="create-transactionStage" v-model="tran.stage">
+			  <select class="form-control" id="create-transactionStage" v-model="tran.stage" @change="changePoss()">
 			  	<option></option>
-			  	<option v-for="stage in stages" :value="stage.id">{{stage.text}}</option>
+			  	<option v-for="stage in stages" :value="stage.id" >{{stage.text}}</option>
 			  </select>
 			</div>
 		</div>
@@ -235,7 +390,7 @@
 			</div>
 			<label for="create-possibility" class="col-sm-2 control-label">可能性</label>
 			<div class="col-sm-10" style="width: 300px;">
-				<input type="text" class="form-control" id="create-possibility">
+				<input type="text" class="form-control" id="create-possibility" v-model="possible" readonly>
 			</div>
 		</div>
 		
@@ -247,16 +402,16 @@
 				  <option v-for="source in sources" :value="source.id">{{source.text}}</option>
 				</select>
 			</div>
-			<label for="create-activitySrc" class="col-sm-2 control-label">市场活动源&nbsp;&nbsp;<a href="javascript:void(0);" data-toggle="modal" data-target="#findMarketActivity"><span class="glyphicon glyphicon-search"></span></a></label>
+			<label for="create-activitySrc" class="col-sm-2 control-label">市场活动源&nbsp;&nbsp;<a href="javascript:void(0);" @click="listAct(actInfo.start, actInfo.count)"><span class="glyphicon glyphicon-search"></span></a></label>
 			<div class="col-sm-10" style="width: 300px;">
-				<input type="text" class="form-control" id="create-activitySrc" readonly>
+				<input type="text" class="form-control" id="create-activitySrc" v-model="activity.name" readonly>
 			</div>
 		</div>
 		
 		<div class="form-group">
-			<label for="create-contactsName" class="col-sm-2 control-label">联系人名称&nbsp;&nbsp;<a href="javascript:void(0);" data-toggle="modal" data-target="#findContacts"><span class="glyphicon glyphicon-search"></span></a></label>
+			<label for="create-contactsName" class="col-sm-2 control-label">联系人名称&nbsp;&nbsp;<a href="javascript:void(0);" @click="listCt(ctInfo.start, ctInfo.count)"><span class="glyphicon glyphicon-search"></span></a></label>
 			<div class="col-sm-10" style="width: 300px;">
-				<input type="text" class="form-control" id="create-contactsName" readonly>
+				<input type="text" class="form-control" id="create-contactsName" readonly v-model="contact.fullname">
 			</div>
 		</div>
 		
@@ -277,7 +432,7 @@
 		<div class="form-group">
 			<label for="create-nextContactTime" class="col-sm-2 control-label">下次联系时间</label>
 			<div class="col-sm-10" style="width: 300px;">
-				<input type="text" class="form-control" id="create-nextContactTime" v-model="tran.nextcontacttime">
+				<input type="text" class="form-control time" id="create-nextContactTime">
 			</div>
 		</div>
 	</form>

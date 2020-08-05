@@ -2,6 +2,7 @@ package com.example.service;
 
 import com.example.pojo.TblActivity;
 import com.example.pojo.TblContactsRemark;
+import com.example.pojo.TblTran;
 
 import java.util.List;
 
@@ -20,4 +21,6 @@ public interface TblContactRemarkService {
     List<TblActivity> listRelations(String id);
 
     void deleteRelation(String actId, String ctId);
+
+    List<TblTran> listTrans(String id);
 }

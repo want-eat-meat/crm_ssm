@@ -15,6 +15,16 @@ public class TblTranHistory {
 
     private String tranid;
 
+    private String possible;
+
+    public String getPossible() {
+        return possible;
+    }
+
+    public void setPossible(String possible) {
+        this.possible = possible;
+    }
+
     public String getId() {
         return id;
     }

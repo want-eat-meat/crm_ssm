@@ -5,7 +5,9 @@ import com.example.exception.ResultException;
 import com.example.mapper.*;
 import com.example.pojo.*;
 import com.example.service.TblTranService;
+import com.example.utils.DateTimeUtil;
 import com.example.utils.PageResult;
+import com.example.utils.UUIDUtil;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,7 +15,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @Transactional
@@ -31,6 +35,10 @@ public class TblTranServiceImpl implements TblTranService {
     private TblTranRemarkMapper tranRemarkMapper;
     @Autowired
     private TblTranHistoryMapper tranHistoryMapper;
+    @Autowired
+    private TblActivityMapper activityMapper;
+    @Autowired
+    private TblTranRemarkMapper remarkMapper;
 
     @Override
     public PageInfo list(int start, int count, String owner, String name, String ctmname, String stage, String type, String source, String ctname) {
@@ -132,5 +140,270 @@ public class TblTranServiceImpl implements TblTranService {
         }catch (Exception e){
             throw new ResultException(ResultEnum.FAIL);
         }
+    }
+
+    @Override
+    public PageResult listActivity(int start, int count, String search) {
+        TblActivityExample activityExample = new TblActivityExample();
+        if(search != null && !"".equals(search)){
+            activityExample.createCriteria().andNameLike("%"+search+"%");
+        }
+        //分页拦截
+        PageHelper.startPage(start, count);
+        List<TblActivity> activities = activityMapper.selectByExample(activityExample);
+        PageInfo pageInfo = new PageInfo(activities);
+        List<TblActivity> datas = pageInfo.getList();
+        for(TblActivity activity : datas){
+            activity.setOwner(userMapper.selectByPrimaryKey(activity.getOwner()).getName());
+        }
+        return new PageResult(pageInfo.getTotal(), pageInfo.getList());
+    }
+
+    @Override
+    public PageResult listContact(int start, int count, String search) {
+        TblContactsExample contactsExample = new TblContactsExample();
+        if(search != null && !"".equals(search)){
+            contactsExample.createCriteria().andFullnameLike("%" + search + "%");
+        }
+        PageHelper.startPage(start, count);
+        List<TblContacts> tblContacts = contactsMapper.selectByExample(contactsExample);
+        PageInfo pageInfo = new PageInfo(tblContacts);
+        return new PageResult(pageInfo.getTotal(), pageInfo.getList());
+    }
+
+    @Override
+    public List<Map<String, String>> listCustomer(String name) {
+        TblCustomerExample customerExample = new TblCustomerExample();
+        if(name != null && !"".equals(name)){
+            customerExample.createCriteria().andNameLike("%"+name+"%");
+        }
+        List<TblCustomer> tblCustomers = customerMapper.selectByExample(customerExample);
+        if(tblCustomers == null || tblCustomers.size() == 0){
+            throw new ResultException(ResultEnum.SUCCESS_NODATA);
+        }
+        List<Map<String, String>> result = new ArrayList<>();
+        for(TblCustomer customer : tblCustomers){
+            Map<String, String> map = new HashMap<>();
+            map.put("name", customer.getName());
+            result.add(map);
+        }
+        return result;
+    }
+
+    @Override
+    public void add(TblTran tran) {
+        if(tran.getOwner() == null || "".equals(tran.getOwner()) ||
+        tran.getName() == null || "".equals(tran.getName()) ||
+        tran.getExpecteddate() == null || "".equals(tran.getExpecteddate()) ||
+        tran.getCustomerid() == null || "".equals(tran.getCustomerid()) ||
+        tran.getStage() == null || "".equals(tran.getStage())){
+            throw new ResultException("请完善必要信息");
+        }
+        //设置id
+        tran.setId(UUIDUtil.getUUID());
+        //添加创建时间
+        tran.setCreatetime(DateTimeUtil.getSysTime());
+        //判断客户是否存在
+        TblCustomerExample customerExample = new TblCustomerExample();
+        customerExample.createCriteria().andNameEqualTo(tran.getCustomerid());
+        List<TblCustomer> tblCustomers = customerMapper.selectByExample(customerExample);
+        if(tblCustomers == null || tblCustomers.size() == 0){
+            //客户不存在
+            TblCustomer customer = new TblCustomer();
+            customer.setId(UUIDUtil.getUUID());
+            customer.setName(tran.getCustomerid());
+            customer.setCreateby(tran.getCreateby());
+            customer.setCreatetime(tran.getCreatetime());
+            customer.setOwner(tran.getOwner());
+            customerMapper.insertSelective(customer);
+            tran.setCustomerid(customer.getId());
+        }else{
+            //客户存在
+            tran.setCustomerid(tblCustomers.get(0).getId());
+        }
+        try{
+            //添加交易历史
+            TblTranHistory history = new TblTranHistory();
+            history.setId(UUIDUtil.getUUID());
+            history.setCreateby(tran.getCreateby());
+            history.setCreatetime(tran.getCreatetime());
+            history.setExpecteddate(tran.getExpecteddate());
+            history.setTranid(tran.getId());
+            history.setStage(tran.getStage());
+            if(tran.getMoney() != null && !"".equals(tran.getMoney())){
+                history.setMoney(tran.getMoney());
+            }
+            tranHistoryMapper.insertSelective(history);
+            //添加交易
+            tranMapper.insertSelective(tran);
+        }catch (Exception e){
+            throw new ResultException(ResultEnum.FAIL);
+        }
+    }
+
+    @Override
+    public Map<String, Object> getById(String id) {
+        Map<String, Object> tranMap = new HashMap<>();
+        TblTran tran = tranMapper.selectByPrimaryKey(id);
+        if(tran == null){
+            throw new ResultException(ResultEnum.FAIL);
+        }
+        tranMap.put("tran", tran);
+        //添加数据
+        String owner = userMapper.selectByPrimaryKey(tran.getOwner()).getName();
+        tranMap.put("owner", owner);
+        String customer = customerMapper.selectByPrimaryKey(tran.getCustomerid()).getName();
+        tranMap.put("customer", customer);
+        if(tran.getActivityid() != null && !"".equals(tran.getActivityid())){
+            String activity = activityMapper.selectByPrimaryKey(tran.getActivityid()).getName();
+            tranMap.put("activity", activity);
+        }
+        if(tran.getContactsid() != null && !"".equals(tran.getContactsid())){
+            String contact = contactsMapper.selectByPrimaryKey(tran.getContactsid()).getFullname();
+            tranMap.put("contact", contact);
+        }
+        String create = userMapper.selectByPrimaryKey(tran.getCreateby()).getName();
+        tranMap.put("create", create);
+        if(tran.getEditby() != null && !"".equals(tran.getEditby())){
+            String edit = userMapper.selectByPrimaryKey(tran.getEditby()).getName();
+            tranMap.put("edit", edit);
+        }
+
+        return tranMap;
+    }
+
+    @Override
+    public List<TblTranHistory> listHistory(String id) {
+        TblTranHistoryExample historyExample = new TblTranHistoryExample();
+        historyExample.createCriteria().andTranidEqualTo(id);
+        historyExample.setOrderByClause("createtime desc");
+        List<TblTranHistory> histories = tranHistoryMapper.selectByExample(historyExample);
+        if(histories == null || histories.size() == 0){
+            throw new ResultException(ResultEnum.SUCCESS_NODATA);
+        }
+        for(TblTranHistory history : histories){
+            history.setCreateby(userMapper.selectByPrimaryKey(history.getCreateby()).getName());
+        }
+        return histories;
+    }
+
+    @Override
+    public void addRemark(TblTranRemark remark) {
+        //设置id
+        remark.setId(UUIDUtil.getUUID());
+        //设置创建时间
+        remark.setCreatetime(DateTimeUtil.getSysTime());
+        //设置修改标志 0：未修改 1：修改
+        remark.setEditflag("0");
+        //添加
+        remarkMapper.insertSelective(remark);
+    }
+
+    @Override
+    public List<TblTranRemark> listRemark(String id) {
+        TblTranRemarkExample remarkExample = new TblTranRemarkExample();
+        remarkExample.createCriteria().andTranidEqualTo(id);
+        List<TblTranRemark> remarks = remarkMapper.selectByExample(remarkExample);
+        if(remarks == null && remarks.size() == 0){
+            throw new ResultException(ResultEnum.SUCCESS_NODATA);
+        }
+        for(TblTranRemark remark : remarks){
+            remark.setCreateby(userMapper.selectByPrimaryKey(remark.getCreateby()).getName());
+            if("1".equals(remark.getEditflag())){
+                remark.setEditby(userMapper.selectByPrimaryKey(remark.getEditby()).getName());
+            }
+        }
+        return remarks;
+    }
+
+    @Override
+    public void updateRemark(TblTranRemark remark) {
+        //设置修改时间
+        remark.setEdittime(DateTimeUtil.getSysTime());
+        //创建者置空
+        remark.setCreateby(null);
+        //修改修改标志 0：未修改 1：修改
+        remark.setEditflag("1");
+        //修改
+        try{
+            remarkMapper.updateByPrimaryKeySelective(remark);
+        }catch (Exception e){
+            throw new ResultException(ResultEnum.FAIL);
+        }
+    }
+
+    @Override
+    public void deleteRemark(String id) {
+        try{
+            remarkMapper.deleteByPrimaryKey(id);
+        }catch (Exception e){
+            throw new ResultException(ResultEnum.FAIL);
+        }
+    }
+
+    @Override
+    public void update(TblTran tran) {
+        //判断市场活动和联系人有无变化
+        if("".equals(tran.getActivityid())){
+            tran.setActivityid(null);
+        }
+        if("".equals(tran.getContactsid())){
+            tran.setContactsid(null);
+        }
+        //设置修改时间
+        tran.setEdittime(DateTimeUtil.getSysTime());
+        //判断客户是否存在
+        TblCustomerExample customerExample = new TblCustomerExample();
+        customerExample.createCriteria().andNameEqualTo(tran.getCustomerid());
+        List<TblCustomer> tblCustomers = customerMapper.selectByExample(customerExample);
+        if(tblCustomers == null || tblCustomers.size() == 0){
+            //客户不存在
+            TblCustomer customer = new TblCustomer();
+            customer.setId(UUIDUtil.getUUID());
+            customer.setName(tran.getCustomerid());
+            customer.setCreateby(tran.getCreateby());
+            customer.setCreatetime(tran.getCreatetime());
+            customer.setOwner(tran.getOwner());
+            customerMapper.insertSelective(customer);
+            tran.setCustomerid(customer.getId());
+        }else{
+            //客户存在
+            tran.setCustomerid(tblCustomers.get(0).getId());
+        }
+        //判断阶段是否变化
+        TblTran hisTran = tranMapper.selectByPrimaryKey(tran.getId());
+        if(!tran.getStage().equals(hisTran.getStage())){
+            //阶段变化，添加历史
+            addTranHistory(tran);
+        }
+        //更新交易
+        tranMapper.updateByPrimaryKeySelective(tran);
+    }
+
+    private void addTranHistory(TblTran tran) {
+        TblTranHistory history= new TblTranHistory();
+        history.setId(UUIDUtil.getUUID());
+        history.setCreateby(tran.getEditby());
+        history.setCreatetime((tran.getEdittime()));
+        history.setMoney(tran.getMoney());
+        history.setExpecteddate(tran.getExpecteddate());
+        history.setTranid(tran.getId());
+        history.setStage(tran.getStage());
+        tranHistoryMapper.insertSelective(history);
+    }
+
+    @Override
+    public void updateStage(TblTran tran) {
+        //判断阶段是否变化
+        TblTran hisTran = tranMapper.selectByPrimaryKey(tran.getId());
+        if(tran.getStage().equals(hisTran.getStage())){
+            return;
+        }
+        //添加修改时间
+        tran.setEdittime(DateTimeUtil.getSysTime());
+        //添加历史
+        addTranHistory(tran);
+        //修改
+        tranMapper.updateByPrimaryKeySelective(tran);
     }
 }

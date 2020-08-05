@@ -1,10 +1,7 @@
 package com.example.service.impl;
 
 import com.example.enums.ResultEnum;
-import com.example.mapper.TblActivityMapper;
-import com.example.mapper.TblContactsRemarkMapper;
-import com.example.mapper.TblUserMapper;
-import com.example.mapper.TblContactsActivityRelationMapper;
+import com.example.mapper.*;
 import com.example.pojo.*;
 import com.example.service.TblContactRemarkService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +25,8 @@ public class TblContactRemarkServiceImpl implements TblContactRemarkService {
     private TblContactsActivityRelationMapper relationMapper;
     @Autowired
     private TblActivityMapper activityMapper;
+    @Autowired
+    private TblTranMapper tranMapper;
 
     @Override
     public void add(TblContactsRemark remark) {
@@ -133,5 +132,16 @@ public class TblContactRemarkServiceImpl implements TblContactRemarkService {
         }catch (Exception e){
             throw new ResultException(ResultEnum.FAIL);
         }
+    }
+
+    @Override
+    public List<TblTran> listTrans(String id) {
+        TblTranExample tranExample = new TblTranExample();
+        tranExample.createCriteria().andContactsidEqualTo(id);
+        List<TblTran> tblTrans = tranMapper.selectByExample(tranExample);
+        if(tblTrans == null && tblTrans.size() == 0){
+            throw new ResultException(ResultEnum.FAIL);
+        }
+        return tblTrans;
     }
 }

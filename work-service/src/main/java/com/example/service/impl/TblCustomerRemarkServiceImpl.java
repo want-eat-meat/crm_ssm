@@ -1,13 +1,8 @@
 package com.example.service.impl;
 
 import com.example.enums.ResultEnum;
-import com.example.mapper.TblContactsMapper;
-import com.example.mapper.TblCustomerRemarkMapper;
-import com.example.mapper.TblUserMapper;
-import com.example.pojo.TblContacts;
-import com.example.pojo.TblContactsExample;
-import com.example.pojo.TblCustomerRemark;
-import com.example.pojo.TblCustomerRemarkExample;
+import com.example.mapper.*;
+import com.example.pojo.*;
 import com.example.service.TblCustomerRemarkService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -26,6 +21,8 @@ public class TblCustomerRemarkServiceImpl implements TblCustomerRemarkService {
     private TblUserMapper userMapper;
     @Autowired
     private TblContactsMapper contactsMapper;
+    @Autowired
+    private TblTranMapper tblTranMapper;
 
     @Override
     public void add(TblCustomerRemark remark) {
@@ -103,5 +100,16 @@ public class TblCustomerRemarkServiceImpl implements TblCustomerRemarkService {
         contactsExample.createCriteria().andCustomeridEqualTo(id);
         List<TblContacts> contacts = contactsMapper.selectByExample(contactsExample);
         return contacts;
+    }
+
+    @Override
+    public List<TblTran> listTrans(String id) {
+        TblTranExample tranExample = new TblTranExample();
+        tranExample.createCriteria().andCustomeridEqualTo(id);
+        List<TblTran> tblTrans = tblTranMapper.selectByExample(tranExample);
+        if(tblTrans == null || tblTrans.size() == 0){
+            throw new ResultException(ResultEnum.SUCCESS_NODATA);
+        }
+        return tblTrans;
     }
 }

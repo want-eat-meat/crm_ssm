@@ -44,6 +44,10 @@
 				contacts : [],
 				//用于删除联系人
 				deleteContact : {},
+				//交易集合
+				trans : [],
+				//用于删除交易
+				delTran : {}
 			},
 			methods : {
 				//交互事件
@@ -288,12 +292,50 @@
 							alert(self.result.msg);
 						}
 					})
+				},
+				//交易列表
+				listTran : function () {
+					var uri = url + "/listTran";
+					var data = "id=" + ctmId;
+					var self = this;
+					axios.post(uri, data).then(function (value) {
+						self.result = value.data;
+						if(self.result.status == 200){
+							self.trans = self.result.data;
+						}else{
+							alert(self.result.msg);
+						}
+					})
+				},
+				//删除交易
+				deleteTran : function (id, index) {
+					this.delTran.id = id;
+					this.delTran.index = index;
+					$("#removeTransactionModal").modal("show");
+				},
+				submitDelTran : function () {
+					var uri = url + "/deleteTran";
+					var data = "id=" + this.delTran.id;
+					var self = this;
+					axios.post(uri, data).then(function (value) {
+						self.result = value.data;
+						if(self.result.status == 200){
+							$("#removeTransactionModal").modal("hide");
+							self.trans.splice(self.delTran.index, 1);
+						}else{
+							alert(self.result.msg);
+						}
+					})
+				},
+				addTran : function () {
+
 				}
 			},
 			mounted : function () {
 				this.selectCtm();
 				this.listRk();
 				this.listCt();
+				this.listTran()
 				$(".time").datetimepicker({
 					minView: "month",
 					language: "zh-CN",
@@ -344,7 +386,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
-                    <button type="button" class="btn btn-danger" data-dismiss="modal">删除</button>
+                    <button type="button" class="btn btn-danger" @click="submitDelTran()">删除</button>
                 </div>
             </div>
         </div>
@@ -706,14 +748,14 @@
 						</tr>
 					</thead>
 					<tbody>
-						<tr>
-							<td><a href="../transaction/detail.html" style="text-decoration: none;">动力节点-交易01</a></td>
-							<td>5,000</td>
-							<td>谈判/复审</td>
+						<tr v-for="(tran, index) in trans">
+							<td><a href="../transaction/detail.html" style="text-decoration: none;">{{tran.name}}</a></td>
+							<td>{{tran.money}}</td>
+							<td>{{tran.stage}}</td>
 							<td>90</td>
-							<td>2017-02-07</td>
-							<td>新业务</td>
-							<td><a href="javascript:void(0);" data-toggle="modal" data-target="#removeTransactionModal" style="text-decoration: none;"><span class="glyphicon glyphicon-remove"></span>删除</a></td>
+							<td>{{tran.expecteddate}}</td>
+							<td>{{tran.type}}</td>
+							<td><a href="javascript:void(0);" @click="deleteTran(tran.id, index)" style="text-decoration: none;"><span class="glyphicon glyphicon-remove"></span>删除</a></td>
 						</tr>
 					</tbody>
 				</table>

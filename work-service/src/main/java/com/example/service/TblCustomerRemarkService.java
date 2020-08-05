@@ -2,6 +2,7 @@ package com.example.service;
 
 import com.example.pojo.TblContacts;
 import com.example.pojo.TblCustomerRemark;
+import com.example.pojo.TblTran;
 
 import java.util.List;
 
@@ -17,4 +18,6 @@ public interface TblCustomerRemarkService {
     void addContact(TblContacts contact);
 
     List<TblContacts> listContact(String id);
+
+    List<TblTran> listTrans(String id);
 }

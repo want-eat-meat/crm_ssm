@@ -22,11 +22,6 @@
             <artifactId>work-utils</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
-        <dependency>
-            <groupId>com.example.work</groupId>
-            <artifactId>work-exception</artifactId>
-            <version>1.0-SNAPSHOT</version>
-        </dependency>
 
         <dependency>
             <groupId>com.github.pagehelper</groupId>

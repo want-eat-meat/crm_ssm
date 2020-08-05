@@ -146,6 +146,10 @@
 							alert(self.result.msg);
 						}
 					})
+				},
+				//进入细节页面
+				showDetail : function (id) {
+					window.location.href="detail.html?id=" + id;
 				}
 			},
 
@@ -260,7 +264,7 @@
 					<tbody>
 						<tr v-for="tran in pageResult.rows">
 							<td><input type="checkbox" :value="tran.id" class="checks" @click="checks()"/></td>
-							<td><a style="text-decoration: none; cursor: pointer;" onclick="window.location.href='detail.html';">{{tran.name}}</a></td>
+							<td><a style="text-decoration: none; cursor: pointer;" @click="showDetail(tran.id)">{{tran.name}}</a></td>
 							<td>{{tran.customerid}}</td>
 							<td>{{tran.stage}}</td>
 							<td>{{tran.type}}</td>

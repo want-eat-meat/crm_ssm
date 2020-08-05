@@ -1,11 +1,11 @@
 package com.example.controller;
 
-import com.example.pojo.TblContacts;
-import com.example.pojo.TblCustomerRemark;
-import com.example.pojo.TblDicValue;
-import com.example.pojo.TblUser;
+import com.example.enums.ResultEnum;
+import com.example.exception.ResultException;
+import com.example.pojo.*;
 import com.example.service.TblContactService;
 import com.example.service.TblCustomerRemarkService;
+import com.example.service.TblTranService;
 import com.example.utils.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -27,6 +28,8 @@ public class TblCustomerRemarkController {
     private TblCustomerRemarkService remarkService;
     @Autowired
     private TblContactService contactService;
+    @Autowired
+    private TblTranService tranService;
 
     @Value("${session.user}")
     private String USER;
@@ -93,6 +96,43 @@ public class TblCustomerRemarkController {
         List<String> ids = new ArrayList<>();
         ids.add(id);
         contactService.delete(ids);
+        return Result.success();
+    }
+
+    @RequestMapping("listTran")
+    public Result listTrans(String id, HttpServletRequest request){
+        List<TblTran> trans = remarkService.listTrans(id);
+        //添加数据
+        ServletContext servletContext = request.getSession().getServletContext();
+        HashMap<String, Set<TblDicValue>> dic = (HashMap<String, Set<TblDicValue>>) servletContext.getAttribute("dic");
+        Set<TblDicValue> stages = dic.get("stage");
+        Set<TblDicValue> types = dic.get("transactionType");
+        for(TblTran tran : trans){
+            if(tran.getStage() != null && !"".equals(tran.getStage())){
+                for(TblDicValue value : stages){
+                    if(value.getId().equals(tran.getStage())){
+                        tran.setStage(value.getValue());
+                        break;
+                    }
+                }
+            }
+            if(tran.getType() != null && !"".equals(tran.getType())){
+                for(TblDicValue value : types){
+                    if(value.getId().equals(tran.getType())){
+                        tran.setType(value.getValue());
+                        break;
+                    }
+                }
+            }
+        }
+        return Result.success(trans);
+    }
+
+    @RequestMapping("deleteTran")
+    public Result deleteTran(String id){
+        List<String> ids = new ArrayList<>();
+        ids.add(id);
+        tranService.delete(ids);
         return Result.success();
     }
 }

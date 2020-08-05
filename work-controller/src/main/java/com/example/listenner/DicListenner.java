@@ -8,8 +8,8 @@ import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
-import java.util.HashMap;
-import java.util.Set;
+import java.io.FileReader;
+import java.util.*;
 
 public class DicListenner implements ServletContextListener {
     @Autowired
@@ -20,6 +20,12 @@ public class DicListenner implements ServletContextListener {
         context.getAutowireCapableBeanFactory().autowireBean(this);
         HashMap<String, Set<TblDicValue>> dics = dicService.getDics();
         sce.getServletContext().setAttribute("dic", dics);
+        ResourceBundle bundle = ResourceBundle.getBundle("properties/stage-possible");
+        Map<String ,String> possMap = new HashMap<>();
+        for(String key : bundle.keySet()){
+            possMap.put(key, bundle.getString(key));
+        }
+        sce.getServletContext().setAttribute("poss", possMap);
     }
 
     @Override

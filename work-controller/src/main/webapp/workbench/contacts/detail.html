@@ -58,6 +58,8 @@
 				relations : [],
 				//解除关联
 				deleteRelation : {},
+				//交易集合
+				trans : {},
 			},
 			methods : {
 				//交互事件
@@ -355,12 +357,42 @@
 							alert(self.result.msg);
 						}
 					})
+				},
+				listTran : function () {
+					var uri = "/contactRemark/listTran";
+					var data = "id=" + contactId;
+					var self = this;
+					axios.post(uri, data).then(function (value) {
+						self.result = value.data;
+						if(self.result.status == 200){
+							self.trans = self.result.data;
+						}else{
+							alert(self.result.msg);
+						}
+					})
+				},
+				deleteTran : function (id, index) {
+					if(!confirm("确认删除？")){
+						return;
+					}
+					var uri = "/contactRemark/deleteTran";
+					var data = "id=" + id;
+					var self = this;
+					axios.post(uri, data).then(function (value) {
+						self.result = value.data;
+						if(self.result.status == 200){
+							self.trans.splice(index, 1);
+						}else{
+							alert(self.result.msg);
+						}
+					})
 				}
 			},
 			mounted : function () {
 				this.getCt();
 				this.listRk();
 				this.listRts();
+				this.listTran();
 				$(".time").datetimepicker({
 					minView: "month",
 					language: "zh-CN",
@@ -395,8 +427,7 @@
 			</div>
 		</div>
 	</div>
-	
-	<!-- 联系人和市场活动关联的模态窗口 -->
+
 	<!-- 关联市场活动的模态窗口 -->
 	<div class="modal fade" id="bundModal" role="dialog">
 		<div class="modal-dialog" role="document" style="width: 80%;">
@@ -739,15 +770,15 @@
 						</tr>
 					</thead>
 					<tbody>
-						<tr>
-							<td><a href="../transaction/detail.html" style="text-decoration: none;">动力节点-交易01</a></td>
-							<td>5,000</td>
-							<td>谈判/复审</td>
-							<td>90</td>
-							<td>2017-02-07</td>
-							<td>新业务</td>
-							<td><a href="javascript:void(0);" data-toggle="modal" data-target="#unbundModal" style="text-decoration: none;"><span class="glyphicon glyphicon-remove"></span>删除</a></td>
-						</tr>
+					<tr v-for="(tran, index) in trans">
+						<td><a href="../transaction/detail.html" style="text-decoration: none;">{{tran.name}}</a></td>
+						<td>{{tran.money}}</td>
+						<td>{{tran.stage}}</td>
+						<td>90</td>
+						<td>{{tran.expecteddate}}</td>
+						<td>{{tran.type}}</td>
+						<td><a href="javascript:void(0);" @click="deleteTran(tran.id, index)" style="text-decoration: none;"><span class="glyphicon glyphicon-remove"></span>删除</a></td>
+					</tr>
 					</tbody>
 				</table>
 			</div>

@@ -74,10 +74,10 @@
 				chooseCtm : function () {
 					this.listCtm(this.addContact.customerid)
 				},
-                //修改时动态查询客户
-                editChooseCtm : function(){
-				    this.listCtm(this.editResult.customername);
-                },
+				//修改时动态查询客户
+				editChooseCtm : function(){
+					this.listCtm(this.editResult.customername);
+				},
                 //查询客户
                 listCtm : function(name){
                     var uri = url + "/listCustomer?name=" + name;
