@@ -5,6 +5,7 @@ import com.example.pojo.TblClueExample;
 import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
+import java.util.Map;
 
 public interface TblClueMapper {
     int countByExample(TblClueExample example);
@@ -28,4 +29,6 @@ public interface TblClueMapper {
     int updateByPrimaryKeySelective(TblClue record);
 
     int updateByPrimaryKey(TblClue record);
+
+    List<Map<String, String>> clueState();
 }

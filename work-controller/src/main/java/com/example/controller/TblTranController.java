@@ -228,11 +228,13 @@ public class TblTranController {
     }
 
     @RequestMapping("listStage")
-    public Result listStage(HttpServletRequest request){
+    public Result listStage(String id, HttpServletRequest request){
         ServletContext servletContext = request.getSession().getServletContext();
         Map<String, Set<TblDicValue>> dic = (Map<String, Set<TblDicValue>>) servletContext.getAttribute("dic");
         Set<TblDicValue> stages = dic.get("stage");
-        return Result.success(stages);
+        Map<String, String> poss = (Map<String, String>) servletContext.getAttribute("poss");
+        List<Map<String, String>> stageList = tranService.listStage(id, stages, poss);
+        return Result.success(stageList);
     }
 
     @RequestMapping("updateStage")

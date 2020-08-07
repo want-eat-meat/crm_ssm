@@ -5,6 +5,7 @@ import com.example.pojo.TblTranExample;
 import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
+import java.util.Map;
 
 public interface TblTranMapper {
     int countByExample(TblTranExample example);
@@ -28,4 +29,6 @@ public interface TblTranMapper {
     int updateByPrimaryKeySelective(TblTran record);
 
     int updateByPrimaryKey(TblTran record);
+
+    List<Map<String, String>> tranStage();
 }

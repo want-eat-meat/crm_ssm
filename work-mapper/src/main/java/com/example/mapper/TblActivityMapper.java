@@ -5,6 +5,7 @@ import com.example.pojo.TblActivityExample;
 import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
+import java.util.Map;
 
 public interface TblActivityMapper {
     int countByExample(TblActivityExample example);
@@ -28,4 +29,6 @@ public interface TblActivityMapper {
     int updateByPrimaryKeySelective(TblActivity record);
 
     int updateByPrimaryKey(TblActivity record);
+
+    List<Map<String, String>> selectCreate();
 }

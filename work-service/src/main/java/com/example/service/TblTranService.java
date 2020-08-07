@@ -1,5 +1,6 @@
 package com.example.service;
 
+import com.example.pojo.TblDicValue;
 import com.example.pojo.TblTran;
 import com.example.pojo.TblTranHistory;
 import com.example.pojo.TblTranRemark;
@@ -8,6 +9,7 @@ import com.github.pagehelper.PageInfo;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public interface TblTranService {
     PageInfo list(int start, int count, String owner, String name, String ctmname, String stage, String type, String source, String ctname);
@@ -37,4 +39,6 @@ public interface TblTranService {
     void update(TblTran tran);
 
     void updateStage(TblTran tran);
+
+    List<Map<String, String>> listStage(String id, Set<TblDicValue> stages, Map<String, String> poss);
 }

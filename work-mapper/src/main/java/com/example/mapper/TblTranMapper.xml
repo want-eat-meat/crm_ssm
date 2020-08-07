@@ -21,6 +21,11 @@
     <result column="contactSummary" property="contactsummary" jdbcType="VARCHAR" />
     <result column="nextContactTime" property="nextcontacttime" jdbcType="CHAR" />
   </resultMap>
+
+  <select id="tranStage" resultType="map">
+    select stage as 'name', count(*) as 'value' from tbl_tran GROUP BY stage
+  </select>
+
   <sql id="Example_Where_Clause" >
     <where >
       <foreach collection="oredCriteria" item="criteria" separator="or" >

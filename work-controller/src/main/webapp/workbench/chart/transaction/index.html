@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="/jquery/jquery-1.11.1-min.js"></script>
+    <script src="/jquery/echarts.min.js"></script>
+</head>
+</head>
+<body>
+<script>
+    $(function () {
+        $.ajax({
+            url : "/echarts/tran",
+            dataType : "json",
+            type : "get",
+            success : function (obj) {
+
+                var mainCharts = echarts.init(document.getElementById("main"));
+
+                option = {
+                    tooltip: {
+                        trigger: 'item',
+                        formatter: '{a} <br/>{b}: {c} ({d}%)'
+                    },
+                    legend: {
+                        orient: 'vertical',
+                        left: 10,
+                        data: obj.data.stage
+                    },
+                    series: [
+                        {
+                            name: '交易阶段',
+                            type: 'pie',
+                            radius: ['50%', '70%'],
+                            avoidLabelOverlap: false,
+                            label: {
+                                show: true,
+                                position: 'center'
+                            },
+                            emphasis: {
+                                label: {
+                                    show: true,
+                                    fontSize: '30',
+                                    fontWeight: 'bold'
+                                }
+                            },
+                            labelLine: {
+                                show: false
+                            },
+                            data: obj.data.tran
+                        }
+                    ]
+                };
+                mainCharts.setOption(option);
+            }
+        })
+    })
+</script>
+    <div id="main" style="width: 100%;height:600px;"></div>
+</body>
+</html>

@@ -14,6 +14,7 @@
     <result column="editTime" property="edittime" jdbcType="CHAR" />
     <result column="editBy" property="editby" jdbcType="VARCHAR" />
   </resultMap>
+
   <sql id="Example_Where_Clause" >
     <where >
       <foreach collection="oredCriteria" item="criteria" separator="or" >
@@ -76,6 +77,11 @@
     id, owner, name, startDate, endDate, cost, description, createTime, createBy, editTime, 
     editBy
   </sql>
+
+  <select id="selectCreate" resultType="map">
+    select startDate as createdate, count(*) as datenumber from tbl_activity GROUP BY startDate order by startDate
+  </select>
+
   <select id="selectByExample" resultMap="BaseResultMap" parameterType="com.example.pojo.TblActivityExample" >
     select
     <if test="distinct" >

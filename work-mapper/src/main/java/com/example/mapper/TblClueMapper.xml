@@ -23,6 +23,11 @@
     <result column="nextContactTime" property="nextcontacttime" jdbcType="CHAR" />
     <result column="address" property="address" jdbcType="VARCHAR" />
   </resultMap>
+
+  <select id="clueState" resultType="map">
+    select state, count(*) as 'number' from tbl_clue group by state
+  </select>
+
   <sql id="Example_Where_Clause" >
     <where >
       <foreach collection="oredCriteria" item="criteria" separator="or" >

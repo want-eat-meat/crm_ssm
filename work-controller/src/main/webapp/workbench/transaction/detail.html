@@ -53,8 +53,6 @@
 				editRemark : {},
 				//阶段集合
 				stages : [],
-				//交易阶段排序
-				tranNo : "",
 			},
 			methods : {
 				//交互
@@ -95,6 +93,7 @@
 						if(self.result.status == 200){
 							self.tranMap = self.result.data;
 							self.tran = self.tranMap.tran;
+							self.getStage();
 						}else{
 							alert(self.result.msg)
 						}
@@ -210,25 +209,16 @@
 				//获取阶段列表
 				getStage : function () {
 					var uri = url + "/listStage";
+					var data = "id=" + tranId;
 					var self = this;
-					axios.get(uri).then(function (value) {
+					axios.post(uri, data).then(function (value) {
 						self.result = value.data;
 						if(self.result.status == 200){
 							self.stages = self.result.data;
-							self.setNowStageOrder();
 						}else{
 							alert(self.result.msg);
 						}
 					})
-				},
-				//设置当前交易阶段的顺序
-				setNowStageOrder : function () {
-					for(var stage in this.stages){
-						if(this.stages[stage].id == this.tran.stage){
-							this.tranNo = this.stages[stage].orderno;
-							break;
-						}
-					}
 				},
 				//更新
 				update : function (stageid) {
@@ -244,7 +234,6 @@
 						if(self.result.status == 200){
 							self.getTran();
 							self.listTranHistory();
-							self.setNowStageOrder();
 						}else{
 							alert(self.result.msg)
 						}
@@ -275,10 +264,9 @@
 
 			},
 			mounted : function () {
-					this.getTran();
-					this.listTranHistory();
-					this.listRk();
-					this.getStage();
+				this.getTran();
+				this.listTranHistory();
+				this.listRk();
 			}
 		})
 	});
@@ -334,10 +322,12 @@
 	<div style="position: relative; left: 40px; top: -50px;" id="show-stage">
 		阶段&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 		<span v-for="stage in stages" @mouseenter="addEvent()">
-			<span v-if="stage.orderno < tranNo" class="glyphicon glyphicon-ok-circle mystage" data-toggle="popover" data-placement="bottom" :data-content="stage.text" style="color: #90F790;" @click="update(stage.id)"></span>
-			<span v-else-if="stage.orderno == tranNo" class="glyphicon glyphicon-map-marker mystage" data-toggle="popover" data-placement="bottom" :data-content="stage.text" style="color: #90F790;" @click="update(stage.id)"></span>
-			<span v-else class="glyphicon glyphicon-record mystage" data-toggle="popover" data-placement="bottom" :data-content="stage.text" @click="update(stage.id)"></span>
-		-----------
+			<span v-if="stage.type == '1'" class="glyphicon glyphicon-ok-circle mystage" data-toggle="popover" data-placement="bottom" :data-content="stage.text.substring(2)" style="color: #90F790;" @click="update(stage.id)"></span>
+			<span v-else-if="stage.type == '2'" class="glyphicon glyphicon-map-marker mystage" data-toggle="popover" data-placement="bottom" :data-content="stage.text.substring(2)" style="color: #90F790;" @click="update(stage.id)"></span>
+			<span v-else-if="stage.type == '3'" class="glyphicon glyphicon-record mystage" data-toggle="popover" data-placement="bottom" :data-content="stage.text.substring(2)" @click="update(stage.id)"></span>
+			<span v-else-if="stage.type == '4'" class="glyphicon glyphicon-remove mystage" data-toggle="popover" data-placement="bottom" :data-content="stage.text.substring(2)" @click="update(stage.id)"></span>
+			<span v-else class="glyphicon glyphicon-remove mystage" style="color:red" data-toggle="popover" data-placement="bottom" :data-content="stage.text.substring(2)" @click="update(stage.id)"></span>
+			-----------
 		</span>
 		<span class="closingDate">{{tran.expecteddate}}</span>
 	</div>

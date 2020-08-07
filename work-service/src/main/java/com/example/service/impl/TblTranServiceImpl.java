@@ -14,10 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Service
 @Transactional
@@ -405,5 +402,66 @@ public class TblTranServiceImpl implements TblTranService {
         addTranHistory(tran);
         //修改
         tranMapper.updateByPrimaryKeySelective(tran);
+    }
+
+    @Override
+    public List<Map<String, String>> listStage(String id, Set<TblDicValue> stages, Map<String, String> poss) {
+        TblTran tran = tranMapper.selectByPrimaryKey(id);
+        //获取可能性大于0的阶段个数
+        int number = 0;
+        for(String key : poss.keySet()){
+            if(poss.get(key).compareTo("0") > 0){
+                number++;
+            }
+        }
+
+        List<Map<String, String>> stageList = new ArrayList<>();
+        //获取当前交易阶段的可能性
+        String possible = poss.get(tran.getStage());
+        //获取当前交易的排序
+        String tranNo = "0";
+        for(TblDicValue value : stages){
+            if(value.getId().equals(tran.getStage())){
+                tranNo = value.getOrderno();
+            }
+        }
+        //给每个阶段赋值
+        // 1：绿圈 2：锚点 3：灰圈 4：灰叉 5：红叉
+        if(possible.equals("0")){
+            //可能性为0
+            for(TblDicValue value : stages){
+                Map<String, String> stageMap = new HashMap<>();
+                stageMap.put("id", value.getId());
+                stageMap.put("text", value.getText());
+                if(Integer.parseInt(value.getOrderno()) <= number){
+                    stageMap.put("type", "3");
+                }else{
+                    if(value.getId().equals(tran.getStage())){
+                        stageMap.put("type", "5");
+                    }else{
+                        stageMap.put("type", "4");
+                    }
+                }
+                stageList.add(stageMap);
+            }
+        }else{
+            //可能性不为0
+            for(TblDicValue value : stages) {
+                Map<String, String> stageMap = new HashMap<>();
+                stageMap.put("id", value.getId());
+                stageMap.put("text", value.getText());
+                if(Integer.parseInt(value.getOrderno()) < Integer.parseInt(tranNo)){
+                    stageMap.put("type", "1");
+                }else if(Integer.parseInt(value.getOrderno()) == Integer.parseInt(tranNo)){
+                    stageMap.put("type", "2");
+                }else if(Integer.parseInt(value.getOrderno()) <= number){
+                    stageMap.put("type", "3");
+                }else{
+                    stageMap.put("type", "4");
+                }
+                stageList.add(stageMap);
+            }
+        }
+        return stageList;
     }
 }
