@@ -24,7 +24,12 @@
 					status : 0,
 					msg : "",
 					data : {}
-				}
+				},
+				phone : "",
+				checkMsg : "发送验证码",
+				codePlaceHodler : "请输入手机号",
+				second : 60,
+				interval : null
 			},
 			methods : {
 				login : function () {
@@ -32,18 +37,28 @@
 					var self = this;
 					if(self.loginAct.trim() == ""){
 						self.msg = "用户名不能为空";
-						return false;
+						return;
 					}
 					if(self.loginPwd.trim() == ""){
 						self.msg = "密码不能为空";
-						return false;
+						return;
 					}
-					var data = "loginAct="+ self.loginAct + "&loginPwd=" + self.loginPwd;
+					if(self.phone.trim() == ""){
+						self.msg = "请输入验证码";
+						return;
+					}
+					if(self.checkMsg == "发送验证码"){
+						self.msg = "请输入验证码";
+						return;
+					}
+					var data = "loginAct="+ self.loginAct + "&loginPwd=" + self.loginPwd + "&code=" + self.phone;
 					axios.post(url, data).then(function (value) {
 						self.result = value.data;
 						if(self.result.status == 200){
+							self.clearCode();
 							window.location.href = "/workbench/index.html";
 						}else{
+							self.phone = "",
 							self.msg = self.result.msg;
 						}
 					})
@@ -51,15 +66,37 @@
 				clearMsg : function () {
 					this.msg = "";
 				},
-				/*sendMsg : function () {
-					var url = "https://openapi.miaodiyun.com/distributor/sendSMS";
-					var data = {
-						respDataType : "JSON",
-						accountSid: "6ed55bf1a3fa75f1eafdef4d4ac85f42",
-						timestamp : date.getTime(),
-						sig :
-					}
-				}*/
+				sendMsg : function () {
+					var url = "/user/phoneCheck?phone=" + this.phone;
+					var self = this;
+					axios.get(url).then(function (value) {
+						self.result = value.data;
+						if(self.result.status == 200){
+							self.codePlaceHodler = "请输入验证码";
+							self.phone = "";
+							self.reLoad();
+						}else{
+							self.msg = self.result.msg;
+						}
+					})
+				},
+				reLoad : function () {
+					var self = this;
+					self.checkMsg = self.second+"秒后重发";
+					self.interval = setInterval(function () {
+						self.second--;
+						self.checkMsg = self.second+"秒后重发";
+					}, 1000);
+					setTimeout(function () {
+						self.clearCode();
+					}, 1000*60)
+				},
+				clearCode : function () {
+					this.codePlaceHodler = "请输入手机号";
+					this.checkMsg = "发送验证码";
+					clearInterval(this.interval);
+					this.second = 60;
+				}
 			}
 		})
 	})
@@ -92,10 +129,10 @@
 						<input class="form-control" type="password" placeholder="密码" v-model="loginPwd" @focus="clearMsg()">
 					</div>
 					<div style="width: 350px; position: relative;top: 40px;" class="input-group">
-						<input type="text" class="form-control" placeholder="请输入手机号" aria-describedby="basic-addon2">
-						<span class="input-group-addon" id="basic-addon2"><a href="#" style="text-decoration: none" @click="sendMsg()">发送验证码</a></span>
+						<input type="text" class="form-control" :placeholder="codePlaceHodler" aria-describedby="basic-addon2" v-model="phone" @focus="clearMsg()">
+						<span class="input-group-addon" id="basic-addon2"><a href="javascript:void(0)" style="text-decoration: none" @click="sendMsg()">{{checkMsg}}</a></span>
 					</div>
-					<div class="checkbox" style="position: relative;top: 30px; left: 10px;">
+					<div class="checkbox" style="position: relative;top: 35px; left: 10px;">
 							<span id="msg" style="color: red">{{msg}}</span>
 					</div>
 					<button type="button" class="btn btn-primary btn-lg btn-block"  style="width: 350px; position: relative;top: 45px;" @click="login()">登录</button>

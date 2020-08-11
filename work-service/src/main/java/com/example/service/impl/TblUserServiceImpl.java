@@ -20,7 +20,19 @@ public class TblUserServiceImpl implements TblUserService {
     TblUserMapper userMapper;
 
     @Override
-    public TblUser login(String loginAct, String loginPwd, String ip) {
+    public TblUser login(String loginAct, String loginPwd, String ip, String code, String targetCode) {
+        //判断验证码是否为空
+        if(code == null || "".equals(code)){
+            throw new ResultException("未输入验证码");
+        }
+        //判断是否发送验证码
+        if(targetCode == null || "".equals(targetCode)){
+            throw new ResultException("未发送验证码");
+        }
+        //判断验证码是否正确
+        if(!code.equals(targetCode)){
+            throw new ResultException("验证码不正确");
+        }
         //判断是否为空
         if(loginAct == null || "".equals(loginAct) || loginPwd == null || "".equals(loginPwd)){
             throw new ResultException("账号或密码为空");
@@ -83,6 +95,30 @@ public class TblUserServiceImpl implements TblUserService {
             return users;
         }catch (Exception e){
             throw new ResultException(ResultEnum.FAIL);
+        }
+    }
+
+    @Override
+    public String checkPhone(String phone) {
+        try{
+            Long.parseLong(phone);
+        }catch (NumberFormatException e){
+            throw new ResultException("请输入正确的手机号");
+        }
+        if(phone.length() != 11){
+            throw new ResultException("请输入正确的手机号");
+        }
+        try{
+            String result = PhoneCheckUtil.SendCode(phone);
+            result = result.substring(1, result.length() - 1).replaceAll("\"", "");
+            String[] strs = result.split(",");
+            if(strs[0].split(":")[1].equals("200")){
+                return strs[2].split(":")[1];
+            }else{
+                throw new ResultException("发送失败");
+            }
+        }catch (Exception e){
+            throw new ResultException("发送失败");
         }
     }
 }

@@ -22,7 +22,7 @@ public class LoginFilter implements Filter {
 
         TblUser user = (TblUser) req.getSession().getAttribute("USER");
         String uri = req.getRequestURI();
-        if(uri.contains("login") || uri.contains("/image") || uri.contains("/jquery") || uri.endsWith(".ico")){
+        if(uri.contains("login") || uri.contains("/image") || uri.contains("/jquery") || uri.endsWith(".ico") || uri.contains("phoneCheck")){
             chain.doFilter(req, resp);
         }else{
             if(user != null){
