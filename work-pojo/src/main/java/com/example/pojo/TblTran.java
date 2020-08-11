@@ -37,6 +37,16 @@ public class TblTran {
 
     private String nextcontacttime;
 
+    private String possible;
+
+    public String getPossible() {
+        return possible;
+    }
+
+    public void setPossible(String possible) {
+        this.possible = possible;
+    }
+
     public String getId() {
         return id;
     }

@@ -5,6 +5,7 @@
     <title>Title</title>
     <script src="/jquery/jquery-1.11.1-min.js"></script>
     <script src="/jquery/echarts.min.js"></script>
+    <script src="/jquery/mycharts.js"></script>
 </head>
 <body>
 <script>
@@ -14,50 +15,49 @@
             dataType : "json",
             type : "get",
             success : function (obj) {
-
-                var mainEcharts = echarts.init(document.getElementById("main"));
-                var option = {
-                    color: ['#3398DB'],
-                    tooltip: {
-                        trigger: 'axis',
-                        axisPointer: {            // 坐标轴指示器，坐标轴触发有效
-                            type: 'shadow'        // 默认为直线，可选为：'line' | 'shadow'
-                        }
-                    },
-                    grid: {
-                        left: '3%',
-                        right: '4%',
-                        bottom: '3%',
-                        containLabel: true
-                    },
-                    xAxis: [
-                        {
-                            type: 'category',
-                            data: obj.data.key,
-                            axisTick: {
-                                alignWithLabel: true
-                            }
-                        }
-                    ],
-                    yAxis: [
-                        {
-                            type: 'value'
-                        }
-                    ],
-                    series: [
-                        {
-                            name: '线索数量',
-                            type: 'bar',
-                            barWidth: '60%',
-                            data: obj.data.value
-                        }
-                    ]
-                };
-                mainEcharts.setOption(option);
+                if(obj.status == 200){
+                    chart_line({
+                        id : "main1",
+                        name : "线索",
+                        key : obj.data.key,
+                        value : obj.data.value
+                    });
+                    chart_bar({
+                        id : "main2",
+                        name : "线索",
+                        key : obj.data.key,
+                        value : obj.data.value
+                    });
+                    chart_circle({
+                        id : "main3",
+                        name : "线索",
+                        key : obj.data.key,
+                        data : obj.data.clue
+                    });
+                    chart_funnel({
+                        id : "main4",
+                        name : "线索",
+                        key : obj.data.key,
+                        size : obj.data.max,
+                        data :obj.data.clue
+                    })
+                }
             }
         })
     })
 </script>
-<div id="main" style="width: 100%;height:600px;"></div>
+<div id="main1" style="width: 49%;height:300px; float: left"></div>
+
+<div style="height: 300px; width: 1px; background-color: lightgray;float: left" ></div>
+
+<div id="main2" style="width: 50%; height:300px; float: left"></div>
+
+<div style="clear: left; background-color: lightgray;height: 1px; width: 100%;"></div>
+
+<div id="main3" style=" width: 49%; height:300px; float: left"></div>
+
+<div style="height: 300px; width: 1px; background-color: lightgray;float: left" ></div>
+
+<div id="main4" style="width: 50%; height:300px; float: left"></div>
 </body>
 </html>

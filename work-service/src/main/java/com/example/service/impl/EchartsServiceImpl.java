@@ -31,7 +31,7 @@ public class EchartsServiceImpl implements EchartsService {
         List<String> key = new ArrayList<>();
         List<Object> value = new ArrayList<>();
         for(Map<String, String> map : actMap){
-            key.add(map.get("createdate"));
+            key.add(map.get("createdate").substring(6));
             value.add(map.get("datenumber"));
         }
         Map<String, Object> resultMap = new HashMap<>();
@@ -43,7 +43,7 @@ public class EchartsServiceImpl implements EchartsService {
     @Override
     public Map<String, Object> tran() {
         Map<String, Object> result = new HashMap<>();
-        List<Map<String, String>> maps = tranMapper.tranStage();
+        List<Map<String, Object>> maps = tranMapper.tranStage();
         result.put("tran", maps);
         return result;
     }

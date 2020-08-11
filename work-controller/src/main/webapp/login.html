@@ -50,7 +50,16 @@
 				},
 				clearMsg : function () {
 					this.msg = "";
-				}
+				},
+				/*sendMsg : function () {
+					var url = "https://openapi.miaodiyun.com/distributor/sendSMS";
+					var data = {
+						respDataType : "JSON",
+						accountSid: "6ed55bf1a3fa75f1eafdef4d4ac85f42",
+						timestamp : date.getTime(),
+						sig :
+					}
+				}*/
 			}
 		})
 	})
@@ -81,6 +90,10 @@
 							<span class="glyphicon glyphicon-lock"></span>
 						</span>
 						<input class="form-control" type="password" placeholder="密码" v-model="loginPwd" @focus="clearMsg()">
+					</div>
+					<div style="width: 350px; position: relative;top: 40px;" class="input-group">
+						<input type="text" class="form-control" placeholder="请输入手机号" aria-describedby="basic-addon2">
+						<span class="input-group-addon" id="basic-addon2"><a href="#" style="text-decoration: none" @click="sendMsg()">发送验证码</a></span>
 					</div>
 					<div class="checkbox" style="position: relative;top: 30px; left: 10px;">
 							<span id="msg" style="color: red">{{msg}}</span>

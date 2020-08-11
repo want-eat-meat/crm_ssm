@@ -30,5 +30,5 @@ public interface TblTranMapper {
 
     int updateByPrimaryKey(TblTran record);
 
-    List<Map<String, String>> tranStage();
+    List<Map<String, Object>> tranStage();
 }

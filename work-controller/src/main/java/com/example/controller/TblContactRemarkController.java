@@ -13,10 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @RestController
 @RequestMapping("contactRemark")
@@ -98,11 +95,13 @@ public class TblContactRemarkController {
         List<TblTran> trans = remarkService.listTrans(id);
         //添加数据
         ServletContext servletContext = request.getSession().getServletContext();
+        Map<String, String> poss = (Map<String, String>) servletContext.getAttribute("poss");
         HashMap<String, Set<TblDicValue>> dic = (HashMap<String, Set<TblDicValue>>) servletContext.getAttribute("dic");
         Set<TblDicValue> stages = dic.get("stage");
         Set<TblDicValue> types = dic.get("transactionType");
         for(TblTran tran : trans){
             if(tran.getStage() != null && !"".equals(tran.getStage())){
+                tran.setPossible(poss.get(tran.getStage()));
                 for(TblDicValue value : stages){
                     if(value.getId().equals(tran.getStage())){
                         tran.setStage(value.getValue());
