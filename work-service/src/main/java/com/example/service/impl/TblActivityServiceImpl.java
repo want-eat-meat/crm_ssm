@@ -20,11 +20,18 @@ import java.util.List;
 public class TblActivityServiceImpl implements TblActivityService {
 
     @Autowired
-    TblUserMapper userMapper;
+    private TblUserMapper userMapper;
     @Autowired
-    TblActivityMapper activityMapper;
+    private TblActivityMapper activityMapper;
     @Autowired
-    TblActivityRemarkMapper remarkMapper;
+    private TblActivityRemarkMapper remarkMapper;
+    @Autowired
+    private TblClueActivityRelationMapper clueActivityRelationMapper;
+    @Autowired
+    private TblContactsActivityRelationMapper contactsActivityRelationMapper;
+    @Autowired
+    private TblTranMapper tranMapper;
+
     @Override
     public List<TblUser> getUserList() {
         List<TblUser> users = userMapper.selectByExample(null);
@@ -97,9 +104,27 @@ public class TblActivityServiceImpl implements TblActivityService {
         activityExample.createCriteria().andIdIn(data);
         TblActivityRemarkExample remarkExample = new TblActivityRemarkExample();
         remarkExample.createCriteria().andActivityidIn(data);
+        TblClueActivityRelationExample clueActivityRelationExample = new TblClueActivityRelationExample();
+        clueActivityRelationExample.createCriteria().andActivityidIn(data);
+        TblContactsActivityRelationExample contactsActivityRelationExample = new TblContactsActivityRelationExample();
+        contactsActivityRelationExample.createCriteria().andActivityidIn(data);
+        TblTranExample tranExample = new TblTranExample();
+        tranExample.createCriteria().andActivityidIn(data);
         try{
             //删除备注
             remarkMapper.deleteByExample(remarkExample);
+            //删除线索与市场活动的关联
+            clueActivityRelationMapper.deleteByExample(clueActivityRelationExample);
+            //删除联系人与市场活动的关联
+            contactsActivityRelationMapper.deleteByExample(contactsActivityRelationExample);
+            //将交易中的市场活动消除
+            List<TblTran> tblTrans = tranMapper.selectByExample(tranExample);
+            if(tblTrans != null && tblTrans.size() != 0) {
+                for (TblTran tran : tblTrans){
+                    tran.setActivityid(null);
+                    tranMapper.updateByPrimaryKey(tran);
+                }
+            }
             //删除活动
             activityMapper.deleteByExample(activityExample);
         }catch (Exception e){

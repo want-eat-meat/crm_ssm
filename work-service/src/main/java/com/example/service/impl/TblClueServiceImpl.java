@@ -2,10 +2,7 @@ package com.example.service.impl;
 
 import com.example.enums.ResultEnum;
 import com.example.exception.ResultException;
-import com.example.mapper.TblClueMapper;
-import com.example.mapper.TblClueRemarkMapper;
-import com.example.mapper.TblDicValueMapper;
-import com.example.mapper.TblUserMapper;
+import com.example.mapper.*;
 import com.example.pojo.*;
 import com.example.service.TblClueService;
 import com.github.pagehelper.PageHelper;
@@ -27,6 +24,8 @@ public class TblClueServiceImpl implements TblClueService {
     private TblUserMapper userMapper;
     @Autowired
     private TblClueRemarkMapper remarkMapper;
+    @Autowired
+    private TblClueActivityRelationMapper relationMapper;
 
     @Override
     public List<TblUser> listUsers() {
@@ -113,9 +112,13 @@ public class TblClueServiceImpl implements TblClueService {
         example.createCriteria().andIdIn(ids);
         TblClueRemarkExample remarkExample = new TblClueRemarkExample();
         remarkExample.createCriteria().andClueidIn(ids);
+        TblClueActivityRelationExample relationExample = new TblClueActivityRelationExample();
+        relationExample.createCriteria().andClueidIn(ids);
         try{
             //删除备注
             remarkMapper.deleteByExample(remarkExample);
+            //删除线索和市场活动联系
+            relationMapper.deleteByExample(relationExample);
             //删除线索
             clueMapper.deleteByExample(example);
         }catch (Exception e){

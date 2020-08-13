@@ -2,11 +2,11 @@ package com.example.service.impl;
 
 import com.example.enums.ResultEnum;
 import com.example.exception.ResultException;
-import com.example.mapper.TblCustomerMapper;
-import com.example.mapper.TblCustomerRemarkMapper;
-import com.example.mapper.TblUserMapper;
+import com.example.mapper.*;
 import com.example.pojo.*;
+import com.example.service.TblContactService;
 import com.example.service.TblCustomerService;
+import com.example.service.TblTranService;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +26,14 @@ public class TblCustomerServiceImpl implements TblCustomerService {
     private TblUserMapper userMapper;
     @Autowired
     private TblCustomerRemarkMapper remarkMapper;
+    @Autowired
+    private TblContactsMapper contactsMapper;
+    @Autowired
+    private TblContactService contactService;
+    @Autowired
+    private TblTranMapper tranMapper;
+    @Autowired
+    private TblTranService tranService;
 
     @Override
     public void add(TblCustomer customer) {
@@ -94,9 +102,32 @@ public class TblCustomerServiceImpl implements TblCustomerService {
         customerExample.createCriteria().andIdIn(ids);
         TblCustomerRemarkExample remarkExample = new TblCustomerRemarkExample();
         remarkExample.createCriteria().andCustomeridIn(ids);
+        TblContactsExample contactsExample = new TblContactsExample();
+        contactsExample.createCriteria().andCustomeridIn(ids);
+        TblTranExample tranExample = new TblTranExample();
+        tranExample.createCriteria().andCustomeridIn(ids);
         try{
             //删除备注
             remarkMapper.deleteByExample(remarkExample);
+            //删除联系人
+            List<TblContacts> tblContacts = contactsMapper.selectByExample(contactsExample);
+            if(tblContacts != null && tblContacts.size() != 0) {
+                List<String> datas = new ArrayList<>();
+                for(TblContacts contact : tblContacts){
+                    datas.add(contact.getId());
+                }
+                contactService.delete(datas);
+            }
+            //删除交易
+            List<TblTran> trans = tranMapper.selectByExample(tranExample);
+            if(trans != null && trans.size() != 0){
+                List<String> datas = new ArrayList<>();
+                for(TblTran tran : trans){
+                    datas.add(tran.getId());
+                }
+                tranService.delete(datas);
+            }
+
             //删除客户
             customerMapper.deleteByExample(customerExample);
         }catch (Exception e){

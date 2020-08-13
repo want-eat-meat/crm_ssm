@@ -1,16 +1,13 @@
 package com.example.service.impl;
 
 import com.example.enums.ResultEnum;
-import com.example.mapper.TblContactsRemarkMapper;
-import com.example.mapper.TblCustomerMapper;
-import com.example.mapper.TblUserMapper;
+import com.example.mapper.*;
 import com.example.pojo.*;
 import com.example.service.TblContactService;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import com.example.mapper.TblContactsMapper;
 import com.example.utils.*;
 import com.example.exception.ResultException;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,6 +28,10 @@ public class TblContactServiceImpl implements TblContactService {
     private TblUserMapper userMapper;
     @Autowired
     private TblContactsRemarkMapper remarkMapper;
+    @Autowired
+    private TblContactsActivityRelationMapper relationMapper;
+    @Autowired
+    private TblTranMapper tranMapper;
 
     @Override
     public void add(TblContacts contact) {
@@ -148,9 +149,23 @@ public class TblContactServiceImpl implements TblContactService {
         contactsExample.createCriteria().andIdIn(ids);
         TblContactsRemarkExample remarkExample = new TblContactsRemarkExample();
         remarkExample.createCriteria().andContactsidIn(ids);
+        TblContactsActivityRelationExample relationExample = new TblContactsActivityRelationExample();
+        relationExample.createCriteria().andContactsidIn(ids);
+        TblTranExample tranExample = new TblTranExample();
+        tranExample.createCriteria().andContactsidIn(ids);
         try{
             //删除备注
             remarkMapper.deleteByExample(remarkExample);
+            //删除联系人与市场活动的关联
+            relationMapper.deleteByExample(relationExample);
+            //清除交易的联系人信息
+            List<TblTran> tblTrans = tranMapper.selectByExample(tranExample);
+            if(tblTrans != null && tblTrans.size() != 0){
+                for(TblTran tran : tblTrans){
+                    tran.setContactsid(null);
+                    tranMapper.updateByPrimaryKey(tran);
+                }
+            }
             //删除联系人
             contactsMapper.deleteByExample(contactsExample);
         } catch (Exception e){

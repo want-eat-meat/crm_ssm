@@ -48,10 +48,6 @@
 						self.msg = "请输入验证码";
 						return;
 					}
-					if(self.checkMsg == "发送验证码"){
-						self.msg = "请输入验证码";
-						return;
-					}
 					var data = "loginAct="+ self.loginAct + "&loginPwd=" + self.loginPwd + "&code=" + self.phone;
 					axios.post(url, data).then(function (value) {
 						self.result = value.data;
