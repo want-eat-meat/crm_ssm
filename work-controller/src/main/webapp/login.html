@@ -29,7 +29,8 @@
 				checkMsg : "发送验证码",
 				codePlaceHodler : "请输入手机号",
 				second : 60,
-				interval : null
+				interval : null,
+				isAvail : true
 			},
 			methods : {
 				login : function () {
@@ -67,6 +68,13 @@
 					this.msg = "";
 				},
 				sendMsg : function () {
+					if(!this.isAvail){
+						return;
+					}
+					if(this.phone.trim() == ""){
+						this.msg = "请输入手机号";
+						return;
+					}
 					var url = "/user/phoneCheck?phone=" + this.phone;
 					var self = this;
 					axios.get(url).then(function (value) {
@@ -74,6 +82,7 @@
 						if(self.result.status == 200){
 							self.codePlaceHodler = "请输入验证码";
 							self.phone = "";
+							self.isAvail = false;
 							self.reLoad();
 						}else{
 							self.msg = self.result.msg;
@@ -88,6 +97,7 @@
 						self.checkMsg = self.second+"秒后重发";
 					}, 1000);
 					setTimeout(function () {
+						self.isAvail = true;
 						self.clearCode();
 					}, 1000*60)
 				},

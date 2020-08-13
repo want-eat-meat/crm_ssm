@@ -1,15 +1,12 @@
 package com.example.controller;
 
-import com.example.exception.ResultException;
 import com.example.pojo.TblUser;
 import com.example.service.TblUserService;
 import com.example.utils.Result;
-import javafx.geometry.Pos;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 import com.example.utils.*;
-
 import javax.servlet.http.HttpServletRequest;
 
 @RestController
@@ -21,10 +18,12 @@ public class TblUserController {
 
     @Value("${session.user}")
     private String USER;
+    @Value("${session.code}")
+    private String CODE;
 
     @RequestMapping("login")
     public Result login(String loginAct, String loginPwd, String code, HttpServletRequest request){
-        String targetCode = (String) request.getSession().getAttribute("code");
+        String targetCode = (String) request.getSession().getAttribute(CODE);
         TblUser user = userService.login(loginAct, MD5Util.getMD5(loginPwd), request.getRemoteAddr(), code, targetCode);
         //存放到Session中
         request.getSession().setAttribute(USER, user);
@@ -46,7 +45,7 @@ public class TblUserController {
     @RequestMapping("changePwd")
     public Result changePwd( String id, String oldPwd, String newPwd, HttpServletRequest request){
         userService.updatePwd(id, MD5Util.getMD5(oldPwd), MD5Util.getMD5(newPwd));
-        //关系Session中的值
+        //获取Session中的值
         TblUser user = (TblUser) request.getSession().getAttribute(USER);
         user.setLoginpwd(MD5Util.getMD5(newPwd));
         request.getSession().setAttribute(USER, user);
@@ -56,7 +55,7 @@ public class TblUserController {
     @RequestMapping("phoneCheck")
     public Result checkPhone(@RequestParam("phone")String phone, HttpServletRequest request){
         String code = userService.checkPhone(phone);
-        request.getSession().setAttribute("code", code);
+        request.getSession().setAttribute(CODE, code);
         return Result.success();
     }
 }
